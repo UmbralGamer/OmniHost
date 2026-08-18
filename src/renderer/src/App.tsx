@@ -4,11 +4,11 @@ function App() {
   const [servers, setServers] = useState<any[]>([])
   const [logs, setLogs] = useState<string[]>([])
   const [tunnelStatus, setTunnelStatus] = useState('Offline')
-  
+
   const [activeServerId, setActiveServerId] = useState<number | null>(null)
   const [activeTab, setActiveTab] = useState<'console' | 'options' | 'players' | 'software'>('console')
   const [onlinePlayers, setOnlinePlayers] = useState<string[]>([])
-  
+
   const [consoleInput, setConsoleInput] = useState('')
   const [rawConfigText, setRawConfigText] = useState('')
   const [advancedMode, setAdvancedMode] = useState(false)
@@ -18,10 +18,10 @@ function App() {
   const [playerData, setPlayerData] = useState<any[]>([])
   const [newPlayerName, setNewPlayerName] = useState('')
   const [isProcessing, setIsProcessing] = useState(false)
-  
+
   const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null)
   const [playerInventory, setPlayerInventory] = useState<any[] | null>(null)
-  const [toasts, setToasts] = useState<{id: number, message: string}[]>([])
+  const [toasts, setToasts] = useState<{ id: number, message: string }[]>([])
 
   const endOfLogsRef = useRef<HTMLDivElement>(null)
 
@@ -41,7 +41,7 @@ function App() {
 
     // --- LISTENER 2: LIVE PLAYERS ---
     // @ts-ignore
-    window.api.onOnlinePlayers((data: {id: number, players: string[]}) => {
+    window.api.onOnlinePlayers((data: { id: number, players: string[] }) => {
       setOnlinePlayers(data.players)
     })
   }, [])
@@ -185,7 +185,7 @@ function App() {
     if (!newPlayerName || activeServerId === null || playerListType === 'live') return;
     setIsProcessing(true);
 
-    let uuid = "00000000-0000-0000-0000-000000000000"; 
+    let uuid = "00000000-0000-0000-0000-000000000000";
     let name = newPlayerName.trim();
 
     if (playerListType !== 'banned-ips') {
@@ -194,9 +194,9 @@ function App() {
         if (res.ok) {
           const profile = await res.json();
           uuid = profile.uuid;
-          name = profile.username; 
+          name = profile.username;
         }
-      } catch (err) {}
+      } catch (err) { }
     }
 
     let newEntry: any = { uuid, name };
@@ -212,7 +212,7 @@ function App() {
       await window.api.writeJson(activeServerId, playerListType, updatedList);
       showToast(`Added ${name} to ${playerListType}`);
     }
-    
+
     setNewPlayerName('');
     setIsProcessing(false);
   }
@@ -243,7 +243,7 @@ function App() {
   const ConfigSelect = ({ label, propKey, options }: any) => (
     <div className="bg-[#1e1e2e] border border-gray-700/50 p-4 rounded-lg flex justify-between items-center shadow-md">
       <span className="font-bold text-gray-200">{label}</span>
-      <select value={props[propKey] || ''} onChange={(e) => setProps(prev => ({...prev, [propKey]: e.target.value}))} className="bg-darkBg text-white border border-gray-600 rounded p-1 outline-none focus:border-brand capitalize">
+      <select value={props[propKey] || ''} onChange={(e) => setProps(prev => ({ ...prev, [propKey]: e.target.value }))} className="bg-darkBg text-white border border-gray-600 rounded p-1 outline-none focus:border-brand capitalize">
         {options.map((opt: string) => <option key={opt} value={opt}>{opt}</option>)}
       </select>
     </div>
@@ -252,16 +252,28 @@ function App() {
   const ConfigNumber = ({ label, propKey }: any) => (
     <div className="bg-[#1e1e2e] border border-gray-700/50 p-4 rounded-lg flex justify-between items-center shadow-md">
       <span className="font-bold text-gray-200">{label}</span>
-      <input type="number" value={props[propKey] || 0} onChange={(e) => setProps(prev => ({...prev, [propKey]: e.target.value}))} className="bg-darkBg text-white border border-gray-600 rounded p-1 w-20 text-center outline-none focus:border-brand" />
+      <input type="number" value={props[propKey] || 0} onChange={(e) => setProps(prev => ({ ...prev, [propKey]: e.target.value }))} className="bg-darkBg text-white border border-gray-600 rounded p-1 w-20 text-center outline-none focus:border-brand" />
     </div>
   )
 
   const ConfigString = ({ label, propKey, placeholder }: any) => (
     <div className="bg-[#1e1e2e] border border-gray-700/50 p-4 rounded-lg flex flex-col md:flex-row md:justify-between md:items-center shadow-md col-span-1 md:col-span-2 lg:col-span-3 gap-2">
       <span className="font-bold text-gray-200 whitespace-nowrap">{label}</span>
-      <input type="text" value={props[propKey] || ''} placeholder={placeholder} onChange={(e) => setProps(prev => ({...prev, [propKey]: e.target.value}))} className="bg-darkBg text-white border border-gray-600 rounded p-2 flex-1 w-full outline-none focus:border-brand" />
+      <input type="text" value={props[propKey] || ''} placeholder={placeholder} onChange={(e) => setProps(prev => ({ ...prev, [propKey]: e.target.value }))} className="bg-darkBg text-white border border-gray-600 rounded p-2 flex-1 w-full outline-none focus:border-brand" />
     </div>
   )
+
+  const handleImageError = (e: any, itemId: string) => {
+    const target = e.target as HTMLImageElement;
+    if (target.src.includes('/items/')) {
+      target.src = target.src.replace('/items/', '/blocks/');
+    } else if (target.src.includes('/blocks/')) {
+      const titleCasedId = itemId.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join('_');
+      target.src = `https://minecraft.wiki/wiki/Special:FilePath/${titleCasedId}.png`;
+    } else if (target.src.includes('minecraft.wiki')) {
+      target.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiI+PHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiBmaWxsPSIjYzg3ZTI1Ii8+PC9zdmc+';
+    }
+  };
 
   const MinecraftSlot = ({ slotId }: { slotId: number }) => {
     const item = playerInventory?.find(i => i.slot === slotId);
@@ -269,9 +281,12 @@ function App() {
       <div className="w-10 h-10 bg-[#8b8b8b] border-t-2 border-l-2 border-[#373737] border-b-2 border-r-2 border-[#ffffff] relative flex items-center justify-center group shadow-inner cursor-help hover:bg-[#a0a0a0] transition-colors">
         {item ? (
           <>
-            <img src={`https://raw.githubusercontent.com/PrismarineJS/minecraft-assets/master/data/1.19.3/items/${item.id}.png`} alt={item.id} className="w-8 h-8 object-contain drop-shadow-md z-10" onError={(e) => {(e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiI+PHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiBmaWxsPSIjYzg3ZTI1Ii8+PC9zdmc+';}} />
+            <img src={`https://raw.githubusercontent.com/PrismarineJS/minecraft-assets/master/data/1.20.2/items/${item.id}.png`} alt={item.id} className="w-8 h-8 object-contain drop-shadow-md z-10" onError={(e) => handleImageError(e, item.id)} />
             {item.count > 1 && <span className="absolute -bottom-1 -right-1 text-white font-black text-[11px] z-20 drop-shadow-[0_1px_1px_rgba(0,0,0,1)]">{item.count}</span>}
-            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max px-2 py-1 bg-[#120412] text-white text-xs rounded border border-[#3b123b] shadow-xl opacity-0 group-hover:opacity-100 transition-opacity z-50 pointer-events-none capitalize">{item.id.replace(/_/g, ' ')}</div>
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max px-2 py-1 bg-[#120412] text-white text-xs rounded border border-[#3b123b] shadow-xl opacity-0 group-hover:opacity-100 transition-opacity z-50 pointer-events-none capitalize flex items-center gap-2">
+              <img src={`https://raw.githubusercontent.com/PrismarineJS/minecraft-assets/master/data/1.20.2/items/${item.id}.png`} alt={item.id} className="w-4 h-4 object-contain" onError={(e) => handleImageError(e, item.id)} />
+              <span>{item.id.replace(/_/g, ' ')}</span>
+            </div>
           </>
         ) : null}
       </div>
@@ -282,7 +297,7 @@ function App() {
 
   return (
     <div className="flex h-screen bg-darkBg text-white overflow-hidden relative">
-      
+
       {/* SIDEBAR */}
       <div className="w-64 bg-darkCard border-r border-gray-800 flex flex-col z-10 shadow-2xl">
         <div className="p-6 border-b border-gray-800">
@@ -294,7 +309,7 @@ function App() {
         <div className="flex-1 overflow-y-auto py-4">
           <div onClick={() => setActiveServerId(null)} className={`px-6 py-3 cursor-pointer flex items-center gap-3 transition-colors ${activeServerId === null ? 'bg-brand/10 text-brand border-r-4 border-brand font-bold' : 'text-gray-400 hover:text-white hover:bg-gray-800/50 font-semibold'}`}>Dashboard</div>
           <div className="px-6 py-4 text-xs font-bold text-gray-600 uppercase tracking-wider">Your Servers</div>
-          
+
           {servers.map(server => (
             <div key={server.id} className="mb-2">
               <div onClick={() => { 
@@ -329,7 +344,7 @@ function App() {
 
       {/* MAIN CONTENT */}
       <div className="flex-1 flex flex-col bg-[#0a0a0f] relative">
-        
+
         {/* DASHBOARD VIEW */}
         {activeServerId === null && (
           <div className="p-8 h-full overflow-y-auto">
@@ -368,8 +383,13 @@ function App() {
               </div>
             </div>
 
+<<<<<<< HEAD
             <div className="flex-1 overflow-hidden relative min-h-0">
               
+=======
+            <div className="flex-1 overflow-hidden relative">
+
+>>>>>>> 2dc8019c8257da9d719f38003fda6016b401643e
               {/* TAB: CONSOLE */}
               {activeTab === 'console' && (
                 <div className="absolute inset-0 flex min-h-0">
@@ -389,7 +409,7 @@ function App() {
                       ))}
                       <div ref={endOfLogsRef} />
                     </div>
-                    
+
                     <form onSubmit={handleSendCommand} className="p-4 bg-darkCard border-t border-gray-800 flex gap-3">
                       <span className="text-gray-500 font-bold text-xl leading-none flex items-center">&gt;</span>
                       <input type="text" value={consoleInput} onChange={(e) => setConsoleInput(e.target.value)} placeholder="Type a command..." className="flex-1 bg-transparent border-none outline-none text-white font-mono" />
@@ -545,10 +565,10 @@ function App() {
                             </h3>
                             <div className="bg-[#c6c6c6] p-6 rounded-lg border-[4px] border-[#555555] inline-block shadow-2xl mx-auto w-full max-w-[480px]">
                               <div className="grid grid-cols-9 gap-1 mb-4 bg-[#c6c6c6]">
-                                {Array.from({length: 27}).map((_, i) => <MinecraftSlot key={`main-${i}`} slotId={i + 9} />)}
+                                {Array.from({ length: 27 }).map((_, i) => <MinecraftSlot key={`main-${i}`} slotId={i + 9} />)}
                               </div>
                               <div className="grid grid-cols-9 gap-1 mt-6">
-                                {Array.from({length: 9}).map((_, i) => <MinecraftSlot key={`hotbar-${i}`} slotId={i} />)}
+                                {Array.from({ length: 9 }).map((_, i) => <MinecraftSlot key={`hotbar-${i}`} slotId={i} />)}
                               </div>
                             </div>
                           </div>
