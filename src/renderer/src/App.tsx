@@ -368,13 +368,13 @@ function App() {
               </div>
             </div>
 
-            <div className="flex-1 overflow-hidden relative">
+            <div className="flex-1 overflow-hidden relative min-h-0">
               
               {/* TAB: CONSOLE */}
               {activeTab === 'console' && (
-                <div className="h-full flex">
-                  <div className="flex-1 flex flex-col bg-[#050505]">
-                    <div className="flex-1 p-6 overflow-y-auto font-mono text-sm text-gray-300">
+                <div className="absolute inset-0 flex min-h-0">
+                  <div className="flex-1 flex flex-col bg-[#050505] min-h-0 min-w-0">
+                    <div className="flex-1 p-6 overflow-y-auto font-mono text-sm text-gray-300 min-h-0">
                       {logs.length === 0 && <div className="text-gray-600 italic mt-4 mb-4">Waiting for server output... click Start to boot!</div>}
                       {logs.map((log, i) => (
                         <div key={i} className="mb-1 leading-relaxed break-words">
@@ -397,12 +397,12 @@ function App() {
                     </form>
                   </div>
 
-                  <div className="w-72 bg-darkCard border-l border-gray-800 flex flex-col shadow-inner">
+                  <div className="w-72 bg-darkCard border-l border-gray-800 flex flex-col shadow-inner min-h-0">
                     <div className="p-4 border-b border-gray-800 flex justify-between items-center bg-gray-900/30">
                       <h3 className="font-bold text-gray-200">Live Players</h3>
                       <div className="bg-green-500/20 text-green-400 px-3 py-1 rounded-full text-xs font-bold">{onlinePlayers.length} Online</div>
                     </div>
-                    <div className="flex-1 overflow-y-auto p-4">
+                    <div className="flex-1 overflow-y-auto p-4 min-h-0">
                       {onlinePlayers.length === 0 ? (
                         <div className="text-center text-gray-500 text-sm mt-10">No one is online right now.</div>
                       ) : (
@@ -422,7 +422,7 @@ function App() {
 
               {/* TAB: OPTIONS */}
               {activeTab === 'options' && (
-                <div className="h-full p-8 overflow-y-auto">
+                <div className="absolute inset-0 p-8 overflow-y-auto">
                   <div className="flex justify-between items-end mb-6">
                     <div>
                       <h3 className="text-xl font-bold text-white">Server Properties</h3>
