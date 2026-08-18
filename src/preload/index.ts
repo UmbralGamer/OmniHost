@@ -27,10 +27,13 @@ const api = {
   createServer: (name: string, type: string, version: string) => ipcRenderer.invoke('create-server', name, type, version),
   getVanillaVersions: () => ipcRenderer.invoke('get-vanilla-versions'),
   getPaperVersions: () => ipcRenderer.invoke('get-paper-versions'),
+  getFabricVersions: () => ipcRenderer.invoke('get-fabric-versions'),
+  getForgeVersions: () => ipcRenderer.invoke('get-forge-versions'),
+  getNeoForgeVersions: () => ipcRenderer.invoke('get-neoforge-versions'),
   downloadServerJar: (id: number, type: string, version: string) => ipcRenderer.invoke('download-server-jar', id, type, version),
-  onDownloadProgress: (id: number, callback: (progress: number) => void) => {
+  onDownloadProgress: (id: number, callback: (progress: number, text?: string) => void) => {
     ipcRenderer.removeAllListeners(`download-progress-${id}`)
-    ipcRenderer.on(`download-progress-${id}`, (_, progress) => callback(progress))
+    ipcRenderer.on(`download-progress-${id}`, (_, progress, text) => callback(progress, text))
   }
 }
 

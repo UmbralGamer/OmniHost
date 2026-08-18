@@ -30,6 +30,7 @@ function App() {
   const [availableVersions, setAvailableVersions] = useState<string[]>([])
   const [isCreatingServer, setIsCreatingServer] = useState(false)
   const [downloadProgress, setDownloadProgress] = useState(0)
+  const [downloadText, setDownloadText] = useState('Downloading server.jar...')
 
   const endOfLogsRef = useRef<HTMLDivElement>(null)
 
@@ -59,8 +60,18 @@ function App() {
       setAvailableVersions([])
       setNewServerVersion('')
       const fetchVersions = async () => {
+        let versions: string[] = []
         // @ts-ignore
-        const versions = newServerType === 'Vanilla' ? await window.api.getVanillaVersions() : await window.api.getPaperVersions();
+        if (newServerType === 'Vanilla') versions = await window.api.getVanillaVersions();
+        // @ts-ignore
+        else if (newServerType === 'Paper') versions = await window.api.getPaperVersions();
+        // @ts-ignore
+        else if (newServerType === 'Fabric') versions = await window.api.getFabricVersions();
+        // @ts-ignore
+        else if (newServerType === 'Forge') versions = await window.api.getForgeVersions();
+        // @ts-ignore
+        else if (newServerType === 'NeoForge') versions = await window.api.getNeoForgeVersions();
+        
         setAvailableVersions(versions);
         if (versions.length > 0) setNewServerVersion(versions[0]);
       }
@@ -103,14 +114,16 @@ function App() {
     setIsCreatingServer(true);
     setDownloadProgress(0);
 
-    // @ts-ignore
-    window.api.onDownloadProgress((id: number, progress: number) => {
-      setDownloadProgress(progress);
-    });
-
     try {
       // @ts-ignore
       const newId = await window.api.createServer(newServerName, newServerType, newServerVersion);
+      
+      // @ts-ignore
+      window.api.onDownloadProgress(newId, (progress: number, text?: string) => {
+        setDownloadProgress(progress)
+        if (text) setDownloadText(text)
+      });
+
       // @ts-ignore
       await window.api.downloadServerJar(newId, newServerType, newServerVersion);
       
@@ -717,6 +730,9 @@ function App() {
                 >
                   <option value="Vanilla">Vanilla (Official)</option>
                   <option value="Paper">Paper (Optimized)</option>
+                  <option value="Fabric">Fabric (Mods)</option>
+                  <option value="Forge">Forge (Mods)</option>
+                  <option value="NeoForge">NeoForge (Mods)</option>
                 </select>
               </div>
 
@@ -739,7 +755,7 @@ function App() {
               {isCreatingServer && (
                 <div className="mt-6">
                   <div className="flex justify-between text-xs text-gray-400 mb-1">
-                    <span>Downloading server.jar...</span>
+                    <span>{downloadText}</span>
                     <span>{downloadProgress}%</span>
                   </div>
                   <div className="w-full bg-gray-800 rounded-full h-2">

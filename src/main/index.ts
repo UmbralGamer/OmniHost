@@ -10,6 +10,8 @@ import semver from 'semver'
 import { getServers, createServer } from './db'
 import { MinecraftAdapter } from './adapters/MinecraftAdapter'
 import { FrpAdapter } from './adapters/FrpAdapter'
+import { JavaManager } from './adapters/JavaManager'
+import { spawn } from 'child_process'
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -88,12 +90,65 @@ app.whenReady().then(() => {
     }
   });
 
+  ipcMain.handle('get-fabric-versions', async () => {
+    try {
+      const res = await axios.get('https://meta.fabricmc.net/v2/versions/game');
+      return res.data.filter((v: any) => v.stable).map((v: any) => v.version);
+    } catch (e) {
+      console.error(e);
+      return [];
+    }
+  });
+
+  ipcMain.handle('get-forge-versions', async () => {
+    try {
+      const res = await axios.get('https://files.minecraftforge.net/net/minecraftforge/forge/promotions_slim.json');
+      const promos = res.data.promos;
+      const versions = new Set<string>();
+      for (const key of Object.keys(promos)) {
+        if (key.endsWith('-latest')) {
+          versions.add(key.replace('-latest', ''));
+        }
+      }
+      return Array.from(versions).reverse();
+    } catch (e) {
+      console.error(e);
+      return [];
+    }
+  });
+
+  ipcMain.handle('get-neoforge-versions', async () => {
+    try {
+      const res = await axios.get('https://maven.neoforged.net/api/maven/versions/releases/net/neoforged/neoforge');
+      const all: string[] = res.data.versions;
+      const mcVersions = new Set<string>();
+      for (const v of all) {
+        const parts = v.split('.');
+        if (parts.length >= 2) {
+          if (parts[0] === '20' || parts[0] === '21') {
+            mcVersions.add('1.' + parts[0] + '.' + parts[1]);
+          } else {
+            mcVersions.add(parts[0] + '.' + parts[1]);
+          }
+        }
+      }
+      return Array.from(mcVersions).reverse();
+    } catch (e) {
+      console.error(e);
+      return [];
+    }
+  });
+
   ipcMain.handle('download-server-jar', async (event, id, type, version) => {
     const serverDir = join(app.getPath('userData'), 'servers', id.toString());
     const jarPath = join(serverDir, 'server.jar');
+    const installerPath = join(serverDir, 'installer.jar');
     
     try {
       let downloadUrl = '';
+      let isInstaller = false;
+      let installerArgs: string[] = [];
+
       if (type === 'Vanilla') {
         const manifestRes = await axios.get('https://launchermeta.mojang.com/mc/game/version_manifest_v2.json');
         const vData = manifestRes.data.versions.find((v: any) => v.id === version);
@@ -106,9 +161,34 @@ app.whenReady().then(() => {
         const buildData = await axios.get(`https://api.papermc.io/v2/projects/paper/versions/${version}/builds/${build}`);
         const dlName = buildData.data.downloads.application.name;
         downloadUrl = `https://api.papermc.io/v2/projects/paper/versions/${version}/builds/${build}/downloads/${dlName}`;
+      } else if (type === 'Fabric') {
+        const loaderRes = await axios.get('https://meta.fabricmc.net/v2/versions/loader');
+        const loader = loaderRes.data.find((v: any) => v.stable).version;
+        const installerRes = await axios.get('https://meta.fabricmc.net/v2/versions/installer');
+        const installer = installerRes.data.find((v: any) => v.stable).version;
+        downloadUrl = `https://meta.fabricmc.net/v2/versions/loader/${version}/${loader}/${installer}/server/jar`;
+      } else if (type === 'Forge') {
+        const forgeRes = await axios.get('https://files.minecraftforge.net/net/minecraftforge/forge/promotions_slim.json');
+        let forgeVersion = forgeRes.data.promos[version + '-latest'] || forgeRes.data.promos[version + '-recommended'];
+        if (!forgeVersion) throw new Error('Forge version not found for ' + version);
+        downloadUrl = `https://maven.minecraftforge.net/net/minecraftforge/forge/${version}-${forgeVersion}/forge-${version}-${forgeVersion}-installer.jar`;
+        isInstaller = true;
+        installerArgs = ['--installServer'];
+      } else if (type === 'NeoForge') {
+        const neoRes = await axios.get('https://maven.neoforged.net/api/maven/versions/releases/net/neoforged/neoforge');
+        const all: string[] = neoRes.data.versions;
+        let prefix = version.startsWith('1.') ? version.substring(2) : version;
+        const matched = all.filter((v: string) => v.startsWith(prefix + '.')).sort((a: string, b: string) => semver.rcompare(semver.coerce(a)!, semver.coerce(b)!));
+        if (matched.length === 0) throw new Error('NeoForge version not found for ' + version);
+        const neoVersion = matched[0];
+        downloadUrl = `https://maven.neoforged.net/releases/net/neoforged/neoforge/${neoVersion}/neoforge-${neoVersion}-installer.jar`;
+        isInstaller = true;
+        installerArgs = ['--installServer'];
       }
 
       if (!downloadUrl) throw new Error('Could not resolve download URL');
+
+      event.sender.send(`download-progress-${id}`, 0, 'Downloading...');
 
       const response = await axios({
         method: 'GET',
@@ -119,21 +199,53 @@ app.whenReady().then(() => {
       const totalLength = response.headers['content-length'] as string;
       let downloaded = 0;
 
-      const writer = fs.createWriteStream(jarPath);
+      const targetPath = isInstaller ? installerPath : jarPath;
+      const writer = fs.createWriteStream(targetPath);
       response.data.on('data', (chunk: Buffer) => {
         downloaded += chunk.length;
         if (totalLength) {
           const progress = Math.round((downloaded / parseInt(totalLength)) * 100);
-          event.sender.send(`download-progress-${id}`, progress);
+          event.sender.send(`download-progress-${id}`, progress, isInstaller ? 'Downloading Installer...' : 'Downloading Jar...');
         }
       });
 
       response.data.pipe(writer);
 
-      return new Promise((resolve, reject) => {
+      await new Promise((resolve, reject) => {
         writer.on('finish', () => resolve(true));
         writer.on('error', reject);
       });
+
+      if (isInstaller) {
+        event.sender.send(`download-progress-${id}`, 100, 'Installing Modloader...');
+        
+        let javaRequired: 8 | 16 | 17 | 21 | 25 = 17;
+        const coerced = semver.coerce(version);
+        if (coerced) {
+          if (semver.lt(coerced, '1.17.0')) javaRequired = 8;
+          else if (semver.lt(coerced, '1.18.0')) javaRequired = 16;
+          else if (semver.lt(coerced, '1.20.5')) javaRequired = 17;
+          else if (semver.lt(coerced, '26.0.0')) javaRequired = 21;
+          else javaRequired = 25;
+        }
+
+        const javaPath = await JavaManager.getJavaPath(javaRequired);
+        
+        await new Promise((resolve, reject) => {
+          const proc = spawn(javaPath, ['-jar', 'installer.jar', ...installerArgs], { cwd: serverDir });
+          proc.on('close', (code) => {
+            if (code === 0) resolve(true);
+            else reject(new Error('Installer failed with code ' + code));
+          });
+          proc.on('error', reject);
+        });
+
+        if (fs.existsSync(installerPath)) {
+          fs.unlinkSync(installerPath);
+        }
+      }
+
+      return true;
     } catch (e: any) {
       console.error(e);
       throw new Error(e.message);

@@ -119,12 +119,34 @@ export class MinecraftAdapter {
     }
 
     const jarPath = join(this.serverDir, 'server.jar');
-    if (!fs.existsSync(jarPath)) {
-      this.sendLog(`[System Error] server.jar not found! Please delete and recreate this server.`);
-      return;
+    const runBatPath = join(this.serverDir, 'run.bat');
+    
+    let targetExecutable = javaPath;
+    let targetArgs = ['-Xmx2G', '-jar', 'server.jar', 'nogui'];
+    let env = { ...process.env };
+
+    if (javaPath !== 'java') {
+      const pathModule = require('path');
+      const javaBinDir = pathModule.dirname(javaPath);
+      env.PATH = `${javaBinDir};${process.env.PATH}`;
+      env.JAVA_HOME = pathModule.dirname(javaBinDir);
     }
 
-    this.process = spawn(javaPath, ['-Xmx2G', '-jar', 'server.jar', 'nogui'], { cwd: this.serverDir });
+    if (fs.existsSync(runBatPath)) {
+      targetExecutable = 'cmd.exe';
+      targetArgs = ['/c', 'run.bat', 'nogui'];
+    } else {
+      const files = fs.readdirSync(this.serverDir);
+      const forgeJar = files.find(f => (f.startsWith('forge-') || f.startsWith('neoforge-')) && f.endsWith('.jar') && !f.includes('installer'));
+      if (forgeJar) {
+        targetArgs = ['-Xmx2G', '-jar', forgeJar, 'nogui'];
+      } else if (!fs.existsSync(jarPath)) {
+        this.sendLog(`[System Error] server.jar or modloader not found! Please delete and recreate this server.`);
+        return;
+      }
+    }
+
+    this.process = spawn(targetExecutable, targetArgs, { cwd: this.serverDir, env });
 
     this.process.stdout?.on('data', (data) => {
       const rawText = data.toString().trim();
