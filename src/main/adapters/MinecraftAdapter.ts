@@ -2,7 +2,7 @@ import { spawn, ChildProcess } from 'child_process'
 import { join } from 'path'
 import { app, BrowserWindow } from 'electron'
 import fs from 'fs'
-import axios from 'axios'
+import semver from 'semver'
 import { JavaManager } from './JavaManager'
 
 export class MinecraftAdapter {
@@ -74,21 +74,8 @@ export class MinecraftAdapter {
 
   async init() {
     if (!fs.existsSync(this.serverDir)) fs.mkdirSync(this.serverDir, { recursive: true });
-    const jarPath = join(this.serverDir, 'paper.jar');
     
-    if (!fs.existsSync(jarPath)) {
-      this.sendLog(`[System] Asking PaperMC for the latest version...`);
-      const version = '1.20.4';
-      const userAgent = 'OmniHost-App/1.0.0 (admin@localhost)'; 
-      const buildsRes = await axios.get(`https://fill.papermc.io/v3/projects/paper/versions/${version}/builds`, { headers: { 'User-Agent': userAgent } });
-      const latestBuild = buildsRes.data[buildsRes.data.length - 1]; 
-      this.sendLog(`[System] Downloading Paper build ${latestBuild.id}... this might take a minute!`);
-      const response = await axios({ url: latestBuild.downloads['server:default'].url, method: 'GET', responseType: 'stream', headers: { 'User-Agent': userAgent } });
-      const writer = fs.createWriteStream(jarPath);
-      response.data.pipe(writer);
-      await new Promise((resolve, reject) => { writer.on('finish', resolve); writer.on('error', reject); });
-      this.sendLog('[System] Download complete!');
-    }
+    // Auto-accept EULA
     fs.writeFileSync(join(this.serverDir, 'eula.txt'), 'eula=true\n');
   }
 
@@ -99,12 +86,31 @@ export class MinecraftAdapter {
     
     this.sendLog(`[System] Starting Server ${this.serverId}...`);
 
+    const metaPath = join(this.serverDir, 'omnihost.json');
+    let version = '1.20.4';
+    if (fs.existsSync(metaPath)) {
+      try {
+        const meta = JSON.parse(fs.readFileSync(metaPath, 'utf-8'));
+        if (meta.version) version = meta.version;
+      } catch(e) {}
+    }
+
+    let javaRequired: 8 | 16 | 17 | 21 | 25 = 17;
+    const coerced = semver.coerce(version);
+    if (coerced) {
+      if (semver.lt(coerced, '1.17.0')) javaRequired = 8;
+      else if (semver.lt(coerced, '1.18.0')) javaRequired = 16;
+      else if (semver.lt(coerced, '1.20.5')) javaRequired = 17;
+      else if (semver.lt(coerced, '26.0.0')) javaRequired = 21;
+      else javaRequired = 25;
+    }
+
     let javaPath = 'java';
     try {
       let lastPercent = -1;
-      javaPath = await JavaManager.getJavaPath(17, (percent) => {
+      javaPath = await JavaManager.getJavaPath(javaRequired, (percent) => {
         if (percent - lastPercent >= 25 || percent === 100) {
-           this.sendLog(`[System] Downloading Java 17: ${percent}%`);
+           this.sendLog(`[System] Downloading Java ${javaRequired}: ${percent}%`);
            lastPercent = percent;
         }
       });
@@ -112,7 +118,13 @@ export class MinecraftAdapter {
       this.sendLog(`[System] Warning: Failed to download dynamic Java (${err.message}). Falling back to system java.`);
     }
 
-    this.process = spawn(javaPath, ['-Xmx2G', '-jar', 'paper.jar', 'nogui'], { cwd: this.serverDir });
+    const jarPath = join(this.serverDir, 'server.jar');
+    if (!fs.existsSync(jarPath)) {
+      this.sendLog(`[System Error] server.jar not found! Please delete and recreate this server.`);
+      return;
+    }
+
+    this.process = spawn(javaPath, ['-Xmx2G', '-jar', 'server.jar', 'nogui'], { cwd: this.serverDir });
 
     this.process.stdout?.on('data', (data) => {
       const rawText = data.toString().trim();

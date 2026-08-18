@@ -29,3 +29,9 @@ if (count.count === 0) {
 export function getServers() {
   return db.prepare('SELECT * FROM servers').all()
 }
+
+export function createServer(name: string, type: string) {
+  const insert = db.prepare('INSERT INTO servers (name, game, status, players) VALUES (?, ?, ?, ?)')
+  const info = insert.run(name, `Minecraft (${type})`, 'Offline', 0)
+  return info.lastInsertRowid
+}

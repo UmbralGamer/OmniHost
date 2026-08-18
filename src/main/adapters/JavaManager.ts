@@ -14,7 +14,7 @@ export class JavaManager {
    * Returns the path to the javaw.exe or java.exe for the given version.
    * If it doesn't exist, it will download and extract it first.
    */
-  public static async getJavaPath(version: 8 | 16 | 17 | 21, onProgress?: (percent: number) => void): Promise<string> {
+  public static async getJavaPath(version: 8 | 16 | 17 | 21 | 25, onProgress?: (percent: number) => void): Promise<string> {
     const versionDir = path.join(this.javaDir, version.toString());
     
     // Check if we already have it downloaded

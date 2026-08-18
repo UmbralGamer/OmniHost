@@ -21,6 +21,16 @@ const api = {
   onOnlinePlayers: (callback: (data: {id: number, players: string[]}) => void) => {
     ipcRenderer.removeAllListeners('online-players')
     ipcRenderer.on('online-players', (_, data) => callback(data))
+  },
+  
+  // Versions & Downloads
+  createServer: (name: string, type: string, version: string) => ipcRenderer.invoke('create-server', name, type, version),
+  getVanillaVersions: () => ipcRenderer.invoke('get-vanilla-versions'),
+  getPaperVersions: () => ipcRenderer.invoke('get-paper-versions'),
+  downloadServerJar: (id: number, type: string, version: string) => ipcRenderer.invoke('download-server-jar', id, type, version),
+  onDownloadProgress: (id: number, callback: (progress: number) => void) => {
+    ipcRenderer.removeAllListeners(`download-progress-${id}`)
+    ipcRenderer.on(`download-progress-${id}`, (_, progress) => callback(progress))
   }
 }
 

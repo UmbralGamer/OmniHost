@@ -1,11 +1,13 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { app, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import fs from 'fs'
+import axios from 'axios'
+import semver from 'semver'
 
 // Import our custom modules
-import { getServers } from './db'
+import { getServers, createServer } from './db'
 import { MinecraftAdapter } from './adapters/MinecraftAdapter'
 import { FrpAdapter } from './adapters/FrpAdapter'
 
@@ -49,6 +51,94 @@ app.whenReady().then(() => {
   ipcMain.handle('get-servers', () => {
     return getServers()
   })
+
+  ipcMain.handle('create-server', async (_, name, type, version) => {
+    const id = createServer(name, type);
+    const serverDir = join(app.getPath('userData'), 'servers', id.toString());
+    if (!fs.existsSync(serverDir)) fs.mkdirSync(serverDir, { recursive: true });
+    fs.writeFileSync(join(serverDir, 'omnihost.json'), JSON.stringify({ type, version }));
+    return id;
+  })
+
+  // Versions & Downloads
+  ipcMain.handle('get-vanilla-versions', async () => {
+    try {
+      const res = await axios.get('https://launchermeta.mojang.com/mc/game/version_manifest_v2.json');
+      const releases = res.data.versions.filter((v: any) => v.type === 'release');
+      return releases.map((v: any) => v.id).filter((v: string) => {
+        const coerced = semver.coerce(v);
+        return coerced && semver.gte(coerced, '1.16.0');
+      });
+    } catch (e) {
+      console.error(e);
+      return [];
+    }
+  });
+
+  ipcMain.handle('get-paper-versions', async () => {
+    try {
+      const res = await axios.get('https://api.papermc.io/v2/projects/paper');
+      return res.data.versions.filter((v: string) => {
+        const coerced = semver.coerce(v);
+        return coerced && semver.gte(coerced, '1.16.0');
+      }).reverse(); // newest first
+    } catch (e) {
+      console.error(e);
+      return [];
+    }
+  });
+
+  ipcMain.handle('download-server-jar', async (event, id, type, version) => {
+    const serverDir = join(app.getPath('userData'), 'servers', id.toString());
+    const jarPath = join(serverDir, 'server.jar');
+    
+    try {
+      let downloadUrl = '';
+      if (type === 'Vanilla') {
+        const manifestRes = await axios.get('https://launchermeta.mojang.com/mc/game/version_manifest_v2.json');
+        const vData = manifestRes.data.versions.find((v: any) => v.id === version);
+        if (!vData) throw new Error('Version not found');
+        const vRes = await axios.get(vData.url);
+        downloadUrl = vRes.data.downloads.server.url;
+      } else if (type === 'Paper') {
+        const buildsRes = await axios.get(`https://api.papermc.io/v2/projects/paper/versions/${version}`);
+        const build = buildsRes.data.builds[buildsRes.data.builds.length - 1];
+        const buildData = await axios.get(`https://api.papermc.io/v2/projects/paper/versions/${version}/builds/${build}`);
+        const dlName = buildData.data.downloads.application.name;
+        downloadUrl = `https://api.papermc.io/v2/projects/paper/versions/${version}/builds/${build}/downloads/${dlName}`;
+      }
+
+      if (!downloadUrl) throw new Error('Could not resolve download URL');
+
+      const response = await axios({
+        method: 'GET',
+        url: downloadUrl,
+        responseType: 'stream'
+      });
+
+      const totalLength = response.headers['content-length'] as string;
+      let downloaded = 0;
+
+      const writer = fs.createWriteStream(jarPath);
+      response.data.on('data', (chunk: Buffer) => {
+        downloaded += chunk.length;
+        if (totalLength) {
+          const progress = Math.round((downloaded / parseInt(totalLength)) * 100);
+          event.sender.send(`download-progress-${id}`, progress);
+        }
+      });
+
+      response.data.pipe(writer);
+
+      return new Promise((resolve, reject) => {
+        writer.on('finish', () => resolve(true));
+        writer.on('error', reject);
+      });
+    } catch (e: any) {
+      console.error(e);
+      throw new Error(e.message);
+    }
+  });
 
   // Server Lifecycle
   ipcMain.handle('start-server', async (_, id) => {

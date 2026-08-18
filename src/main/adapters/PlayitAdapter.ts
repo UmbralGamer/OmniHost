@@ -30,9 +30,9 @@ export class PlayitAdapter {
       const writer = fs.createWriteStream(this.exePath);
       response.data.pipe(writer);
       
-      await new Promise((resolve, reject) => { 
+      await new Promise<void>((resolve, reject) => { 
         // CRUCIAL FIX: We use 'close' instead of 'finish' so Windows has time to save the file!
-        writer.on('close', resolve); 
+        writer.on('close', () => resolve()); 
         writer.on('error', reject); 
       });
       this.sendLog('[Playit] Download fully saved to disk!');

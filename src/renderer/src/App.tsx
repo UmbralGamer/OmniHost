@@ -23,6 +23,14 @@ function App() {
   const [playerInventory, setPlayerInventory] = useState<any[] | null>(null)
   const [toasts, setToasts] = useState<{ id: number, message: string }[]>([])
 
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [newServerName, setNewServerName] = useState('')
+  const [newServerType, setNewServerType] = useState('Vanilla')
+  const [newServerVersion, setNewServerVersion] = useState('')
+  const [availableVersions, setAvailableVersions] = useState<string[]>([])
+  const [isCreatingServer, setIsCreatingServer] = useState(false)
+  const [downloadProgress, setDownloadProgress] = useState(0)
+
   const endOfLogsRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -45,6 +53,20 @@ function App() {
       setOnlinePlayers(data.players)
     })
   }, [])
+
+  useEffect(() => {
+    if (showCreateModal) {
+      setAvailableVersions([])
+      setNewServerVersion('')
+      const fetchVersions = async () => {
+        // @ts-ignore
+        const versions = newServerType === 'Vanilla' ? await window.api.getVanillaVersions() : await window.api.getPaperVersions();
+        setAvailableVersions(versions);
+        if (versions.length > 0) setNewServerVersion(versions[0]);
+      }
+      fetchVersions()
+    }
+  }, [showCreateModal, newServerType])
 
   useEffect(() => {
     if (activeTab === 'console') {
@@ -74,6 +96,36 @@ function App() {
     const id = Date.now();
     setToasts(prev => [...prev, { id, message }]);
     setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3000);
+  }
+
+  const handleCreateServer = async () => {
+    if (!newServerName || !newServerVersion) return;
+    setIsCreatingServer(true);
+    setDownloadProgress(0);
+
+    // @ts-ignore
+    window.api.onDownloadProgress((id: number, progress: number) => {
+      setDownloadProgress(progress);
+    });
+
+    try {
+      // @ts-ignore
+      const newId = await window.api.createServer(newServerName, newServerType, newServerVersion);
+      // @ts-ignore
+      await window.api.downloadServerJar(newId, newServerType, newServerVersion);
+      
+      // refresh servers
+      // @ts-ignore
+      const data = await window.api.getServers();
+      setServers(data);
+      
+      setShowCreateModal(false);
+      setNewServerName('');
+    } catch (e: any) {
+      alert("Error creating server: " + e.message);
+    } finally {
+      setIsCreatingServer(false);
+    }
   }
 
   const handleStart = async (id: number) => {
@@ -348,7 +400,12 @@ function App() {
         {/* DASHBOARD VIEW */}
         {activeServerId === null && (
           <div className="p-8 h-full overflow-y-auto">
-            <h2 className="text-3xl font-bold mb-8">Dashboard</h2>
+            <div className="flex justify-between items-center mb-8">
+              <h2 className="text-3xl font-bold">Dashboard</h2>
+              <button onClick={() => setShowCreateModal(true)} className="bg-brand hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-bold shadow-lg transition-colors">
+                + Create Server
+              </button>
+            </div>
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
               {servers.map((server) => (
                 <div key={server.id} onClick={() => { setActiveServerId(server.id); setActiveTab('console'); }} className="bg-darkCard p-6 rounded-xl border border-gray-700/50 shadow-xl cursor-pointer group hover:border-brand/50 transition-colors">
@@ -630,6 +687,87 @@ function App() {
           </div>
         ))}
       </div>
+
+      {/* CREATE SERVER MODAL */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+          <div className="bg-[#121824] p-8 rounded-xl border border-gray-700/50 shadow-2xl w-full max-w-md">
+            <h2 className="text-2xl font-bold text-white mb-6">Create New Server</h2>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-gray-400 mb-1">Server Name</label>
+                <input 
+                  type="text" 
+                  value={newServerName}
+                  onChange={e => setNewServerName(e.target.value)}
+                  className="w-full bg-[#0a0a0f] border border-gray-700 rounded p-2 text-white outline-none focus:border-brand"
+                  placeholder="My Awesome Server"
+                  disabled={isCreatingServer}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-400 mb-1">Software Type</label>
+                <select 
+                  value={newServerType}
+                  onChange={e => setNewServerType(e.target.value)}
+                  className="w-full bg-[#0a0a0f] border border-gray-700 rounded p-2 text-white outline-none focus:border-brand"
+                  disabled={isCreatingServer}
+                >
+                  <option value="Vanilla">Vanilla (Official)</option>
+                  <option value="Paper">Paper (Optimized)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-400 mb-1">Minecraft Version</label>
+                <select 
+                  value={newServerVersion}
+                  onChange={e => setNewServerVersion(e.target.value)}
+                  className="w-full bg-[#0a0a0f] border border-gray-700 rounded p-2 text-white outline-none focus:border-brand"
+                  disabled={isCreatingServer || availableVersions.length === 0}
+                >
+                  {availableVersions.length === 0 ? (
+                    <option>Loading versions...</option>
+                  ) : (
+                    availableVersions.map(v => <option key={v} value={v}>{v}</option>)
+                  )}
+                </select>
+              </div>
+
+              {isCreatingServer && (
+                <div className="mt-6">
+                  <div className="flex justify-between text-xs text-gray-400 mb-1">
+                    <span>Downloading server.jar...</span>
+                    <span>{downloadProgress}%</span>
+                  </div>
+                  <div className="w-full bg-gray-800 rounded-full h-2">
+                    <div className="bg-brand h-2 rounded-full transition-all duration-300" style={{ width: `${downloadProgress}%` }}></div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-3 mt-8">
+              <button 
+                onClick={() => setShowCreateModal(false)}
+                className="px-4 py-2 text-gray-400 hover:text-white transition-colors"
+                disabled={isCreatingServer}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleCreateServer}
+                disabled={isCreatingServer || !newServerName || !newServerVersion}
+                className="bg-brand hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-2 rounded font-bold shadow-lg transition-colors"
+              >
+                {isCreatingServer ? 'Creating...' : 'Create Server'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   )
