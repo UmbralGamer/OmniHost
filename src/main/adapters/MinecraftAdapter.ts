@@ -3,6 +3,7 @@ import { join } from 'path'
 import { app, BrowserWindow } from 'electron'
 import fs from 'fs'
 import axios from 'axios'
+import { JavaManager } from './JavaManager'
 
 export class MinecraftAdapter {
   serverId: number;
@@ -97,7 +98,21 @@ export class MinecraftAdapter {
     this.sendPlayerUpdate();
     
     this.sendLog(`[System] Starting Server ${this.serverId}...`);
-    this.process = spawn('java', ['-Xmx2G', '-jar', 'paper.jar', 'nogui'], { cwd: this.serverDir });
+
+    let javaPath = 'java';
+    try {
+      let lastPercent = -1;
+      javaPath = await JavaManager.getJavaPath(17, (percent) => {
+        if (percent - lastPercent >= 25 || percent === 100) {
+           this.sendLog(`[System] Downloading Java 17: ${percent}%`);
+           lastPercent = percent;
+        }
+      });
+    } catch (err: any) {
+      this.sendLog(`[System] Warning: Failed to download dynamic Java (${err.message}). Falling back to system java.`);
+    }
+
+    this.process = spawn(javaPath, ['-Xmx2G', '-jar', 'paper.jar', 'nogui'], { cwd: this.serverDir });
 
     this.process.stdout?.on('data', (data) => {
       const rawText = data.toString().trim();
