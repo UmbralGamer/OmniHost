@@ -39,6 +39,9 @@ export class MinecraftAdapter {
 
   async getPlayerInventory(playerName: string) {
     try {
+      this.sendCommand('save-all flush');
+      await new Promise(r => setTimeout(r, 200));
+
       const cachePath = join(this.serverDir, 'usercache.json');
       if (!fs.existsSync(cachePath)) return null;
       
