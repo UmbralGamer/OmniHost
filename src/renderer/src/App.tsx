@@ -383,13 +383,8 @@ function App() {
               </div>
             </div>
 
-<<<<<<< HEAD
             <div className="flex-1 overflow-hidden relative min-h-0">
               
-=======
-            <div className="flex-1 overflow-hidden relative">
-
->>>>>>> 2dc8019c8257da9d719f38003fda6016b401643e
               {/* TAB: CONSOLE */}
               {activeTab === 'console' && (
                 <div className="absolute inset-0 flex min-h-0">
