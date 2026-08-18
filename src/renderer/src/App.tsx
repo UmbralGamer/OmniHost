@@ -94,6 +94,24 @@ function App() {
     showToast("Server has been stopped.");
   }
 
+  const handleRestart = async (id: number) => {
+    try {
+      // @ts-ignore
+      await window.api.stopServer(id);
+      setServers(servers.map(s => s.id === id ? { ...s, status: 'Offline' } : s));
+      showToast("Server is restarting...");
+      
+      // Give the server a moment to fully shut down before starting again
+      setTimeout(async () => {
+        // @ts-ignore
+        await window.api.startServer(id);
+        setServers(servers.map(s => s.id === id ? { ...s, status: 'Online' } : s));
+      }, 3000);
+    } catch (error) {
+      alert("Backend Error: " + error);
+    }
+  }
+
   const handleTunnel = async () => {
     if (tunnelStatus === 'Offline') {
       setTunnelStatus('Starting...');
@@ -279,7 +297,14 @@ function App() {
           
           {servers.map(server => (
             <div key={server.id} className="mb-2">
-              <div onClick={() => { setActiveServerId(server.id); setActiveTab('console'); }} className={`px-6 py-3 cursor-pointer flex justify-between items-center transition-colors ${activeServerId === server.id ? 'bg-gray-800/80 text-white font-bold' : 'text-gray-400 hover:text-white hover:bg-gray-800/30 font-semibold'}`}>
+              <div onClick={() => { 
+                if (activeServerId === server.id) {
+                  setActiveServerId(null);
+                } else {
+                  setActiveServerId(server.id); 
+                  setActiveTab('console'); 
+                }
+              }} className={`px-6 py-3 cursor-pointer flex justify-between items-center transition-colors ${activeServerId === server.id ? 'bg-gray-800/80 text-white font-bold' : 'text-gray-400 hover:text-white hover:bg-gray-800/30 font-semibold'}`}>
                 <span className="truncate pr-2">{server.name}</span>
                 <div className={`w-2 h-2 rounded-full flex-shrink-0 ${server.status === 'Online' ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-red-500'}`}></div>
               </div>
@@ -333,9 +358,14 @@ function App() {
           <>
             <div className="bg-darkCard border-b border-gray-800 p-6 flex justify-between items-center shadow-sm z-10">
               <h2 className="text-2xl font-bold text-white">{activeServer.name}</h2>
-              <button onClick={() => activeServer.status === 'Online' ? handleStop(activeServer.id) : handleStart(activeServer.id)} className={`px-8 py-2.5 rounded-lg font-bold text-white transition-all ${activeServer.status === 'Online' ? 'bg-red-500 hover:bg-red-600 shadow-red-500/20 shadow-lg' : 'bg-green-600 hover:bg-green-500 shadow-green-500/20 shadow-lg'}`}>
-                {activeServer.status === 'Online' ? 'STOP' : 'START'}
-              </button>
+              <div className="flex gap-2">
+                <button onClick={() => activeServer.status === 'Online' ? handleStop(activeServer.id) : handleStart(activeServer.id)} className={`px-8 py-2.5 rounded-lg font-bold text-white transition-all ${activeServer.status === 'Online' ? 'bg-red-500 hover:bg-red-600 shadow-red-500/20 shadow-lg' : 'bg-green-600 hover:bg-green-500 shadow-green-500/20 shadow-lg'}`}>
+                  {activeServer.status === 'Online' ? 'STOP' : 'START'}
+                </button>
+                <button onClick={() => handleRestart(activeServer.id)} className="px-8 py-2.5 rounded-lg font-bold text-white transition-all bg-yellow-500 hover:bg-yellow-600 shadow-yellow-500/20 shadow-lg">
+                  RESTART
+                </button>
+              </div>
             </div>
 
             <div className="flex-1 overflow-hidden relative">
