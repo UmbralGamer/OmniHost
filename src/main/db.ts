@@ -35,3 +35,8 @@ export function createServer(name: string, type: string) {
   const info = insert.run(name, `Minecraft (${type})`, 'Offline', 0)
   return info.lastInsertRowid
 }
+
+export function deleteServer(id: number) {
+  const stmt = db.prepare('DELETE FROM servers WHERE id = ?')
+  stmt.run(id)
+}

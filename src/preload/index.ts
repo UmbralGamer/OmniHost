@@ -25,11 +25,15 @@ const api = {
   
   // Versions & Downloads
   createServer: (name: string, type: string, version: string) => ipcRenderer.invoke('create-server', name, type, version),
+  deleteServer: (id: number) => ipcRenderer.invoke('delete-server', id),
   getVanillaVersions: () => ipcRenderer.invoke('get-vanilla-versions'),
   getPaperVersions: () => ipcRenderer.invoke('get-paper-versions'),
   getFabricVersions: () => ipcRenderer.invoke('get-fabric-versions'),
   getForgeVersions: () => ipcRenderer.invoke('get-forge-versions'),
   getNeoForgeVersions: () => ipcRenderer.invoke('get-neoforge-versions'),
+  searchModpacks: (query: string, version: string, modloader: string) => ipcRenderer.invoke('search-modpacks', query, version, modloader),
+  getModpackDetails: (modId: number) => ipcRenderer.invoke('get-modpack-details', modId),
+  installCurseforgeModpack: (id: number, modId: number, version: string) => ipcRenderer.invoke('install-curseforge-modpack', id, modId, version),
   downloadServerJar: (id: number, type: string, version: string) => ipcRenderer.invoke('download-server-jar', id, type, version),
   onDownloadProgress: (id: number, callback: (progress: number, text?: string) => void) => {
     ipcRenderer.removeAllListeners(`download-progress-${id}`)

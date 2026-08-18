@@ -6,10 +6,13 @@ module.exports = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['Andante', 'sans-serif'],
+      },
       colors: {
-        darkBg: '#0f172a',
-        darkCard: '#1e293b',
-        brand: '#3b82f6'
+        darkBg: '#050505',
+        darkCard: '#111111',
+        brand: '#FFD700'
       }
     },
   },

@@ -120,6 +120,7 @@ export class MinecraftAdapter {
 
     const jarPath = join(this.serverDir, 'server.jar');
     const runBatPath = join(this.serverDir, 'run.bat');
+    const startBatPath = join(this.serverDir, 'start.bat');
     
     let targetExecutable = javaPath;
     let targetArgs = ['-Xmx2G', '-jar', 'server.jar', 'nogui'];
@@ -135,6 +136,9 @@ export class MinecraftAdapter {
     if (fs.existsSync(runBatPath)) {
       targetExecutable = 'cmd.exe';
       targetArgs = ['/c', 'run.bat', 'nogui'];
+    } else if (fs.existsSync(startBatPath)) {
+      targetExecutable = 'cmd.exe';
+      targetArgs = ['/c', 'start.bat', 'nogui'];
     } else {
       const files = fs.readdirSync(this.serverDir);
       const forgeJar = files.find(f => (f.startsWith('forge-') || f.startsWith('neoforge-')) && f.endsWith('.jar') && !f.includes('installer'));
@@ -148,25 +152,29 @@ export class MinecraftAdapter {
 
     this.process = spawn(targetExecutable, targetArgs, { cwd: this.serverDir, env });
 
-    this.process.stdout?.on('data', (data) => {
-      const rawText = data.toString().trim();
-      const cleanText = rawText.replace(/\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g, '');
-      if (!cleanText) return;
-      this.sendLog(`[Minecraft]: ${cleanText}`);
+    const readline = require('readline');
+    if (this.process.stdout) {
+      const rl = readline.createInterface({ input: this.process.stdout, terminal: false });
+      rl.on('line', (line: string) => {
+        const rawText = line.trim();
+        const cleanText = rawText.replace(/\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g, '');
+        if (!cleanText) return;
+        this.sendLog(`[Minecraft]: ${cleanText}`);
 
-      const joinMatch = cleanText.match(/([a-zA-Z0-9_]{3,16}) joined the game/);
-      if (joinMatch) {
-        if (!this.onlinePlayers.includes(joinMatch[1])) {
-          this.onlinePlayers.push(joinMatch[1]);
+        const joinMatch = cleanText.match(/([a-zA-Z0-9_]{3,16}) joined the game/);
+        if (joinMatch) {
+          if (!this.onlinePlayers.includes(joinMatch[1])) {
+            this.onlinePlayers.push(joinMatch[1]);
+            this.sendPlayerUpdate();
+          }
+        }
+        const leaveMatch = cleanText.match(/([a-zA-Z0-9_]{3,16}) left the game/);
+        if (leaveMatch) {
+          this.onlinePlayers = this.onlinePlayers.filter(p => p !== leaveMatch[1]);
           this.sendPlayerUpdate();
         }
-      }
-      const leaveMatch = cleanText.match(/([a-zA-Z0-9_]{3,16}) left the game/);
-      if (leaveMatch) {
-        this.onlinePlayers = this.onlinePlayers.filter(p => p !== leaveMatch[1]);
-        this.sendPlayerUpdate();
-      }
-    });
+      });
+    }
     this.process.stderr?.on('data', (data) => this.sendLog(`[Minecraft Error]: ${data.toString().trim()}`));
   }
 
