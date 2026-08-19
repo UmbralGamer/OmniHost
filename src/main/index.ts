@@ -278,7 +278,7 @@ app.whenReady().then(() => {
            }
            const javaPath = await JavaManager.getJavaPath(javaRequired);
            await new Promise((resolve, reject) => {
-             const proc = spawn(javaPath, ['-jar', installer, '--installServer'], { cwd: serverDir });
+             const proc = spawn(javaPath, ['-jar', installer, '--installServer'], { cwd: serverDir, stdio: 'inherit' });
              proc.on('close', resolve);
              proc.on('error', reject);
            });
@@ -440,7 +440,7 @@ app.whenReady().then(() => {
         const javaPath = await JavaManager.getJavaPath(javaRequired);
         
         await new Promise((resolve, reject) => {
-          const proc = spawn(javaPath, ['-jar', 'installer.jar', ...installerArgs], { cwd: serverDir });
+          const proc = spawn(javaPath, ['-jar', 'installer.jar', ...installerArgs], { cwd: serverDir, stdio: 'inherit' });
           proc.on('close', (code) => {
             if (code === 0) resolve(true);
             else reject(new Error('Installer failed with code ' + code));
