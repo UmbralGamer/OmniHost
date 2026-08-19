@@ -16,6 +16,9 @@ import extractZip from 'extract-zip'
 
 const CURSEFORGE_API_KEY = '$2a$10$WLjUD.aJlcjuSSdEOByujetqwwhUeTTfS2AsFhIOq31vLq./E1nRO';
 
+// Disable hardware acceleration to fix Windows UI freeze/hang issues with Framer Motion
+app.disableHardwareAcceleration()
+
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
     width: 1200,
