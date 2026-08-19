@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { MotionAccordion, MotionAccordionItem } from './components/unlumen-ui/motion-faqs-accordion'
+import { MotionAccordion } from './components/unlumen-ui/motion-faqs-accordion'
 import { ListViewIcon } from './components/unlumen-ui/list-view-icon'
 
 function App() {
