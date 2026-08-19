@@ -1,10 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { MotionAccordion } from './components/unlumen-ui/motion-faqs-accordion'
-import { ListViewIcon } from './components/unlumen-ui/list-view-icon'
 import { ConsoleTab } from './components/tabs/ConsoleTab';
 import { OptionsTab } from './components/tabs/OptionsTab';
 import { PlayersTab } from './components/tabs/PlayersTab';
 import { FilesTab } from './components/tabs/FilesTab';
+
+const getGameImageUrl = (game: string) => {
+  if (game.toLowerCase().includes('minecraft')) return 'https://images.unsplash.com/photo-1607513746994-51f730a44832?q=80&w=1000'
+  if (game.toLowerCase().includes('palworld')) return 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1000'
+  if (game.toLowerCase().includes('dayz')) return 'https://images.unsplash.com/photo-1519082273180-60b61665a3c5?q=80&w=1000'
+  return 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=1000'
+}
 
 const classOptions = [
   { id: 6, name: 'Mods' },
@@ -20,9 +25,9 @@ const classOptions = [
 function App() {
   const [servers, setServers] = useState<any[]>([])
   const [logs, setLogs] = useState<string[]>([])
-  const [tunnelStatus, setTunnelStatus] = useState('Offline')
 
   const [activeServerId, setActiveServerId] = useState<number | null>(null)
+  const [activeGameHub, setActiveGameHub] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'console' | 'options' | 'players' | 'software' | 'mods' | 'files'>('console')
   const [onlinePlayers, setOnlinePlayers] = useState<string[]>([])
 
@@ -56,7 +61,6 @@ function App() {
   const [modpacks, setModpacks] = useState<any[]>([])
   const [selectedModpack, setSelectedModpack] = useState<any>(null)
   const [isSearchingPacks, setIsSearchingPacks] = useState(false)
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true)
 
   // Mod Browser States
   const [serverMeta, setServerMeta] = useState<any>(null)
@@ -71,9 +75,6 @@ function App() {
   const [activeSortField, setActiveSortField] = useState<number>(2)
   const [isClassMenuOpen, setIsClassMenuOpen] = useState(false)
   const [totalModCount, setTotalModCount] = useState<number>(0)
-
-  // Cache State
-  const [cacheSize, setCacheSize] = useState<number>(0)
 
   // Software Switching States
   const [editingSoftwareType, setEditingSoftwareType] = useState('Vanilla')
@@ -103,13 +104,7 @@ function App() {
       setOnlinePlayers(data.players)
     })
 
-    // Fetch Cache Size
-    const getCache = async () => {
-      // @ts-ignore
-      const size = await window.api.getCacheInfo();
-      setCacheSize(size);
-    };
-    getCache();
+
   }, [])
 
   useEffect(() => {
@@ -344,16 +339,7 @@ function App() {
     setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3000);
   }
 
-  const handleClearCache = async () => {
-    if (confirm("Are you sure you want to clear the download cache? This will delete all downloaded mods, jars, and Java installations, requiring them to be re-downloaded next time.")) {
-       // @ts-ignore
-       await window.api.clearCache();
-       showToast("Cache cleared successfully!");
-       // @ts-ignore
-       const newSize = await window.api.getCacheInfo();
-       setCacheSize(newSize);
-    }
-  }
+
 
   const handleCreateServer = async () => {
     if (!newServerName || (newServerType !== 'CurseForge Modpack' && !newServerVersion)) return;
@@ -405,10 +391,7 @@ function App() {
       // @ts-ignore
       const data = await window.api.getServers();
       setServers(data);
-      // @ts-ignore
-      const size = await window.api.getCacheInfo();
-      setCacheSize(size);
-      
+
       setNewServerName('');
       setNewServerType('Vanilla');
       setNewServerVersion('');
@@ -467,20 +450,7 @@ function App() {
     }
   }
 
-  const handleTunnel = async () => {
-    if (tunnelStatus === 'Offline') {
-      setTunnelStatus('Starting...');
-      // @ts-ignore
-      await window.api.startTunnel();
-      setTunnelStatus('Online');
-      showToast("Tunnel connected!");
-    } else {
-      // @ts-ignore
-      await window.api.stopTunnel();
-      setTunnelStatus('Offline');
-      showToast("Tunnel disconnected.");
-    }
-  }
+
   const handleSendCommand = React.useCallback(async (cmd: string) => {
     if (!cmd.trim() || activeServerId === null) return;
     // @ts-ignore
@@ -586,173 +556,269 @@ function App() {
   const activeServer = servers.find(s => s.id === activeServerId);
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-[#000000] via-[#000000] via-60% to-[#FFD700] text-white overflow-hidden relative">
+    <div className="bg-background font-body-md text-on-background w-full h-screen flex flex-col overflow-hidden">
+      
+      {/* TOP NAVBAR */}
+      <header className="fixed top-0 left-0 right-0 h-20 bg-surface/90 backdrop-blur-xl z-40 border-b border-outline-variant/20 shadow-lg">
+        <div className="h-full px-gutter max-w-container-max mx-auto flex items-center justify-between">
+          
+          <div className="flex items-center gap-8">
+            {/* LOGO */}
+            <div className="flex items-center gap-3 cursor-default group">
+              <h1 className="text-3xl font-sans text-white flex items-center whitespace-nowrap">
+                <span className="text-brand mr-2 flex">
+                  {"Omni".split("").map((char, i) => (
+                    <span key={`omni-${i}`} className="transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-110" style={{ transitionDelay: `${i * 30}ms` }}>{char}</span>
+                  ))}
+                </span>
+                <span className="flex">
+                  {"Host".split("").map((char, i) => (
+                    <span key={`host-${i}`} className="transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-110" style={{ transitionDelay: `${(i + 4) * 30}ms` }}>{char}</span>
+                  ))}
+                </span>
+              </h1>
+            </div>
 
-      {/* SIDEBAR */}
-      <div className={`bg-[#111111] border-r border-gray-800 flex flex-col z-20 shadow-2xl transition-all duration-300 ease-in-out ${isSidebarOpen ? 'w-64' : 'w-16'}`}>
-        <div className="p-6 border-b border-gray-800 flex items-center justify-between overflow-hidden h-[81px]">
-          {isSidebarOpen && (
-            <h1 className="text-3xl font-sans text-white flex items-center whitespace-nowrap group cursor-default">
-              <span className="text-brand mr-2 flex">
-                {"Omni".split("").map((char, i) => (
-                  <span key={`omni-${i}`} className="transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-110" style={{ transitionDelay: `${i * 30}ms` }}>{char}</span>
-                ))}
-              </span>
-              <span className="flex">
-                {"Host".split("").map((char, i) => (
-                  <span key={`host-${i}`} className="transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-110" style={{ transitionDelay: `${(i + 4) * 30}ms` }}>{char}</span>
-                ))}
-              </span>
-            </h1>
-          )}
-          <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className={`text-gray-400 hover:text-white transition-colors p-1 flex items-center justify-center w-8 h-8 ${!isSidebarOpen && 'mx-auto'}`}>
-            <ListViewIcon isActive={!isSidebarOpen} className="w-5 h-5" />
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto py-4 overflow-x-hidden">
-          <div onClick={() => setActiveServerId(null)} className={`px-6 py-3 cursor-pointer flex items-center gap-3 transition-colors whitespace-nowrap ${activeServerId === null ? 'bg-brand/10 text-brand border-r-4 border-brand font-bold' : 'text-gray-400 hover:text-white hover:bg-gray-800/50 font-semibold'}`}>
-            <svg className="w-5 h-5 min-w-[20px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
-            <span className={`transition-opacity duration-200 ${isSidebarOpen ? 'opacity-100' : 'opacity-0 hidden'}`}>Dashboard</span>
+            {/* NAVIGATION */}
+            <nav className="hidden md:flex items-center gap-6">
+              <button onClick={() => { setActiveServerId(null); setActiveGameHub(null); }} className={`flex items-center gap-2 font-bold transition-all ${activeServerId === null && activeGameHub === null ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface'}`}>
+                <span className="font-label-md text-label-md">Dashboard</span>
+              </button>
+            </nav>
           </div>
-          <div className={`px-6 py-4 text-xs font-bold text-gray-600 uppercase tracking-wider whitespace-nowrap transition-opacity duration-200 ${isSidebarOpen ? 'opacity-100' : 'opacity-0 hidden'}`}>Your Servers</div>
 
-          {isSidebarOpen ? (
-            <MotionAccordion
-              gap={4}
-              value={servers.findIndex(s => s.id === activeServerId) === -1 ? null : servers.findIndex(s => s.id === activeServerId)}
-              onValueChange={(idx) => {
-                if (idx === null) {
-                  setActiveServerId(null);
-                } else {
-                  setActiveServerId(servers[idx].id);
-                  setActiveTab('console');
-                }
-              }}
-              items={servers.map(server => ({
-                question: (
-                  <div className="flex w-full items-center justify-between">
-                    <span className="truncate pr-2 text-sm font-semibold">{server.name}</span>
-                    <div className={`w-2 h-2 rounded-full flex-shrink-0 ${server.status === 'Online' ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-red-500'}`}></div>
-                  </div>
-                ),
-                answer: (
-                  <div className="flex flex-col gap-1">
-                    {[{ id: 'console', label: 'Console' }, { id: 'options', label: 'Options' }, { id: 'players', label: 'Players' }, { id: 'mods', label: 'Mods' }, { id: 'software', label: 'Software' }, { id: 'files', label: 'Files' }].map(tab => (
-                      <div key={tab.id} onClick={() => { setActiveTab(tab.id as any); setSelectedPlayer(null); }} className={`px-4 py-2 cursor-pointer rounded-lg text-sm font-semibold transition-all whitespace-nowrap ${activeTab === tab.id ? 'text-brand bg-brand/10' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>{tab.label}</div>
-                    ))}
-                  </div>
-                )
-              }))}
-            />
-          ) : (
-            servers.map(server => (
-              <div key={server.id} className="mb-2">
-                <div onClick={() => { 
-                  if (activeServerId === server.id) {
-                    setActiveServerId(null);
-                  } else {
-                    setActiveServerId(server.id); 
-                    setActiveTab('console'); 
-                  }
-                }} className={`px-6 py-3 cursor-pointer flex justify-center items-center transition-colors whitespace-nowrap ${activeServerId === server.id ? 'bg-[#111111] text-white font-bold' : 'text-gray-400 hover:text-white hover:bg-white/5 font-semibold'}`}>
-                  {server.game.toLowerCase().includes('minecraft') ? (
-                    <div className="w-6 h-6 bg-gray-800 rounded shadow-inner flex items-center justify-center text-gray-200">
-                      <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
-                        <rect x="3" y="6" width="6" height="6" />
-                        <rect x="15" y="6" width="6" height="6" />
-                        <rect x="9" y="12" width="6" height="9" />
-                        <rect x="6" y="15" width="3" height="6" />
-                        <rect x="15" y="15" width="3" height="6" />
-                      </svg>
-                    </div>
-                  ) : server.game.toLowerCase().includes('palworld') ? (
-                    <div className="w-6 h-6 bg-gray-800 rounded shadow-inner flex items-center justify-center text-gray-200">
-                      <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
-                        <path fillRule="evenodd" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zM4 12c0-4.42 3.58-8 8-8s8 3.58 8 8-3.58 8-8 8-8-3.58-8-8zm3-3l5 8 5-8h-2.5L12 13.5 9.5 9H7z" />
-                      </svg>
-                    </div>
-                  ) : (
-                    <span className="text-xs font-bold bg-gray-800 px-2 py-1 rounded shadow-inner truncate max-w-full text-center">{server.name.charAt(0).toUpperCase()}</span>
-                  )}
-                </div>
-              </div>
-            ))
-          )}
+          <div className="flex items-center gap-6">
+            {/* Right side navbar items can go here in the future */}
+          </div>
         </div>
-
-        <div className="p-4 border-t border-gray-800 bg-[#121824] flex flex-col items-center justify-center gap-3">
-          {isSidebarOpen && (
-            <button onClick={handleClearCache} className="w-full py-2 bg-[#222222] hover:bg-[#333333] text-gray-300 rounded-md font-semibold text-xs transition-colors flex items-center justify-center gap-2 border border-[#444444]">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-              Clear Cache ({(cacheSize / 1024 / 1024).toFixed(1)} MB)
-            </button>
-          )}
-          <button onClick={handleTunnel} className={`w-full py-2 rounded-md font-bold shadow-lg transition-all flex items-center justify-center whitespace-nowrap overflow-hidden ${tunnelStatus === 'Online' ? 'bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20' : 'bg-brand hover:bg-yellow-600 text-white'} ${isSidebarOpen ? 'text-sm' : 'text-xs px-0'}`}>
-            {isSidebarOpen ? (tunnelStatus === 'Online' ? 'Stop Tunnel' : 'Start Tunnel') : (tunnelStatus === 'Online' ? '◼' : '▶')}
-          </button>
-        </div>
-      </div>
+      </header>
 
       {/* MAIN CONTENT */}
-      <div className="flex-1 flex flex-col bg-transparent relative">
+      <main className="relative pt-20 bg-background flex-1 overflow-y-auto w-full">
+        <div className="flex flex-col w-full relative max-w-container-max mx-auto min-h-full">
 
-        {/* DASHBOARD VIEW */}
-        {activeServerId === null && (
-          <div className="p-8 h-full overflow-y-auto">
-            <div className="flex justify-between items-center mb-8">
-              <h2 className="text-3xl font-bold text-white drop-shadow-md">Dashboard</h2>
-              <button onClick={() => setShowCreateModal(true)} className="bg-brand hover:bg-yellow-600 text-white px-6 py-2 rounded-lg font-bold shadow-lg transition-colors">
-                + Create Server
-              </button>
-            </div>
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-              {servers.map((server) => (
-                <div key={server.id} onClick={() => { setActiveServerId(server.id); setActiveTab('console'); }} className="bg-[#050505]/40 backdrop-blur-xl p-6 rounded-2xl border border-white/10 border-t-white/30 border-l-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.8),inset_0_1px_1px_rgba(255,255,255,0.2)] cursor-pointer group hover:border-brand/60 hover:shadow-[0_8px_32px_rgba(255,215,0,0.2),inset_0_1px_2px_rgba(255,255,255,0.4)] transition-all duration-500 relative overflow-hidden">
-                  {/* Glass glare overlays */}
-                  <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/20 opacity-30 group-hover:opacity-60 transition-opacity duration-500 pointer-events-none"></div>
-                  <div className="absolute -inset-[200%] bg-gradient-to-r from-transparent via-white/20 to-transparent -rotate-45 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-[4000ms] ease-in-out pointer-events-none"></div>
-                  <div className="relative z-10 flex justify-between items-start mb-4">
-                    <div>
-                      <h3 className="text-xl font-bold group-hover:text-brand transition-colors drop-shadow-sm">{server.name}</h3>
-                      <p className="text-sm text-gray-400">{server.game}</p>
-                    </div>
-                    <div className={`px-3 py-1 rounded-full text-sm font-bold flex items-center gap-2 shadow-inner ${server.status === 'Online' ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
-                      <div className={`w-2 h-2 rounded-full ${server.status === 'Online' ? 'bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.5)]' : 'bg-red-400 shadow-[0_0_8px_rgba(248,113,113,0.5)]'}`}></div>
-                      {server.status}
+          {/* DASHBOARD VIEW */}
+          {activeServerId === null && activeGameHub === null && (
+            <>
+              {/* Background gradient */}
+              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary/5 via-transparent to-transparent pointer-events-none"></div>
+              
+              {/* Header */}
+              <div className="px-gutter pt-stack-lg pb-stack-md relative z-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-stack-md">
+                <div>
+                  <p className="font-label-md text-label-md text-primary tracking-widest uppercase mb-2">Command Center</p>
+                  <h1 className="font-headline-xl text-headline-xl text-on-background mb-2">Welcome back, <span className="text-primary">Admin</span>.</h1>
+                  <p className="font-body-lg text-body-lg text-on-surface-variant max-w-2xl">Select a Game Hub below to initiate configuration or view your active instances in the list.</p>
+                </div>
+              </div>
+
+              {/* Game Hub Cards */}
+              <div className="px-gutter py-stack-md relative z-10">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  
+                  {/* Minecraft Hub */}
+                  <div onClick={() => setActiveGameHub('Minecraft')} className="group relative rounded-xl overflow-hidden bg-surface-container h-[250px] flex flex-col justify-end transition-all duration-300 hover:shadow-[0_0_30px_rgba(255,215,0,0.15)] ring-1 hover:ring-primary cursor-pointer ring-surface-container-high">
+                    <div className="absolute inset-0 bg-cover bg-center z-0 transition-transform duration-700 group-hover:scale-105" style={{backgroundImage: `url('${getGameImageUrl('Minecraft')}')`}}></div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-surface-container-lowest/80 to-transparent z-10"></div>
+                    <div className="relative z-20 p-6 flex flex-col gap-2 w-full">
+                      <p className="font-label-sm text-label-sm text-primary uppercase tracking-widest mb-1">Game Hub</p>
+                      <h2 className="font-headline-lg text-headline-lg text-on-surface leading-tight group-hover:text-primary transition-colors">Minecraft</h2>
                     </div>
                   </div>
+
+                  {/* Palworld Hub (Coming Soon) */}
+                  <div className="group relative rounded-xl overflow-hidden bg-surface-container h-[250px] flex flex-col justify-end transition-all duration-300 ring-1 ring-surface-container-high opacity-60 grayscale cursor-not-allowed">
+                    <div className="absolute inset-0 bg-cover bg-center z-0" style={{backgroundImage: `url('${getGameImageUrl('Palworld')}')`}}></div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-surface-container-lowest/80 to-transparent z-10"></div>
+                    <div className="absolute top-4 right-4 z-20 bg-surface-container-lowest/80 backdrop-blur-md px-3 py-1.5 rounded-full border border-surface-container-high">
+                      <span className="font-label-sm text-label-sm text-on-surface-variant">Under Development</span>
+                    </div>
+                    <div className="relative z-20 p-6 flex flex-col gap-2 w-full">
+                      <p className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest mb-1">Game Hub</p>
+                      <h2 className="font-headline-lg text-headline-lg text-on-surface-variant leading-tight">Palworld</h2>
+                    </div>
+                  </div>
+
+                  {/* DayZ Hub (Coming Soon) */}
+                  <div className="group relative rounded-xl overflow-hidden bg-surface-container h-[250px] flex flex-col justify-end transition-all duration-300 ring-1 ring-surface-container-high opacity-60 grayscale cursor-not-allowed">
+                    <div className="absolute inset-0 bg-cover bg-center z-0" style={{backgroundImage: `url('${getGameImageUrl('DayZ')}')`}}></div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-surface-container-lowest/80 to-transparent z-10"></div>
+                    <div className="absolute top-4 right-4 z-20 bg-surface-container-lowest/80 backdrop-blur-md px-3 py-1.5 rounded-full border border-surface-container-high">
+                      <span className="font-label-sm text-label-sm text-on-surface-variant">Under Development</span>
+                    </div>
+                    <div className="relative z-20 p-6 flex flex-col gap-2 w-full">
+                      <p className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest mb-1">Game Hub</p>
+                      <h2 className="font-headline-lg text-headline-lg text-on-surface-variant leading-tight">DayZ</h2>
+                    </div>
+                  </div>
+
                 </div>
-              ))}
+              </div>
+
+              {/* Active Servers List Table */}
+              <div className="px-gutter py-stack-lg relative z-10 w-full mb-10">
+                <div className="flex flex-col gap-stack-md">
+                  <div className="flex items-center justify-between border-b border-surface-container-high pb-4">
+                    <h2 className="font-headline-lg text-headline-lg text-on-background">Active Servers List</h2>
+                  </div>
+                  <div className="overflow-x-auto rounded-xl border border-surface-container-high bg-surface-container-low">
+                    <table className="w-full text-left border-collapse">
+                      <thead className="bg-surface-container-high/50 text-primary font-label-md text-label-md uppercase tracking-widest">
+                        <tr className="border-b border-surface-container-high">
+                          <th className="px-6 py-4">Server Name</th>
+                          <th className="px-6 py-4">Status</th>
+                          <th className="px-6 py-4">IP Address</th>
+                          <th className="px-6 py-4">Players</th>
+                          <th className="px-6 py-4 text-right">Uptime</th>
+                        </tr>
+                      </thead>
+                      <tbody className="font-body-md text-on-surface-variant">
+                        {servers.filter(s => s.status === 'Online').length === 0 ? (
+                          <tr>
+                            <td colSpan={5} className="px-6 py-12 text-center text-on-surface-variant italic">No servers are currently running.</td>
+                          </tr>
+                        ) : (
+                          servers.filter(s => s.status === 'Online').map(server => (
+                            <tr key={server.id} onClick={() => { setActiveServerId(server.id); setActiveTab('console'); }} className="border-b border-surface-container-high/50 hover:bg-surface-container-high/80 hover:text-on-surface transition-colors cursor-pointer group">
+                              <td className="px-6 py-4 font-bold group-hover:text-primary transition-colors">{server.name}</td>
+                              <td className="px-6 py-4">
+                                <div className="flex items-center gap-2">
+                                  <span className="w-2 h-2 rounded-full bg-[#4CAF50] shadow-[0_0_8px_rgba(76,175,80,0.8)]"></span>Active
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 font-label-sm tracking-wider">127.0.0.1:{server.port}</td>
+                              <td className="px-6 py-4">0/20</td>
+                              <td className="px-6 py-4 text-right">Running</td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* GAME HUB VIEW */}
+          {activeServerId === null && activeGameHub !== null && (
+            <div className="flex-1 overflow-y-auto relative min-h-0 flex flex-col">
+              <div className="absolute inset-0 bg-cover bg-center opacity-10 pointer-events-none" style={{backgroundImage: `url('${getGameImageUrl(activeGameHub)}')`}}></div>
+              <div className="absolute inset-0 bg-gradient-to-t from-background via-background/90 to-background/40 z-0 pointer-events-none"></div>
+              
+              <div className="relative z-10 px-gutter pt-stack-lg pb-stack-lg flex flex-col gap-6">
+                <button onClick={() => setActiveGameHub(null)} className="self-start flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors font-label-md text-label-md uppercase tracking-widest mb-2">
+                  <span className="material-symbols-outlined text-sm">arrow_back</span>
+                  Back to Dashboard
+                </button>
+                
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-surface-container-high pb-6">
+                  <div>
+                    <h1 className="font-headline-xl text-headline-xl text-on-background">{activeGameHub} Hub</h1>
+                    <p className="font-body-lg text-body-lg text-on-surface-variant max-w-2xl mt-2">Manage your available {activeGameHub} servers or create a new one.</p>
+                  </div>
+                  <button onClick={() => setShowCreateModal(true)} className="bg-primary text-on-primary hover:bg-primary/90 transition-all px-8 py-3 rounded-xl font-label-lg text-label-lg flex items-center gap-2 shadow-[0_0_20px_rgba(233,196,0,0.3)] hover:scale-105 active:scale-95">
+                    <span className="material-symbols-outlined">add_box</span>
+                    NEW {activeGameHub.toUpperCase()} SERVER
+                  </button>
+                </div>
+
+                <div className="flex flex-col gap-4 mt-6">
+                  <h2 className="font-headline-lg text-headline-lg text-on-surface mb-2">Available Servers</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {servers.filter(s => s.game.toLowerCase().includes(activeGameHub.toLowerCase())).length === 0 ? (
+                      <div className="col-span-full py-16 text-center border border-dashed border-surface-container-high rounded-xl bg-surface-container-lowest">
+                        <p className="text-on-surface-variant italic font-body-lg text-body-lg">No servers found for {activeGameHub}.</p>
+                      </div>
+                    ) : (
+                      servers.filter(s => s.game.toLowerCase().includes(activeGameHub.toLowerCase())).map(server => (
+                        <div key={server.id} onClick={() => { setActiveServerId(server.id); setActiveTab('console'); }} className="group relative rounded-xl overflow-hidden bg-surface-container-low p-6 flex flex-col gap-4 border border-surface-container-high hover:border-primary transition-all cursor-pointer hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)]">
+                          <div className="flex justify-between items-start">
+                            <h3 className="font-headline-md text-headline-md text-on-surface group-hover:text-primary transition-colors">{server.name}</h3>
+                            <div className="flex items-center gap-2 bg-background/50 px-3 py-1.5 rounded-full border border-surface-container-highest">
+                              {server.status === 'Online' ? (
+                                <><span className="w-2 h-2 rounded-full bg-[#4CAF50] shadow-[0_0_8px_rgba(76,175,80,0.8)]"></span><span className="text-xs text-on-surface-variant font-bold uppercase tracking-widest">Online</span></>
+                              ) : (
+                                <><span className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]"></span><span className="text-xs text-on-surface-variant font-bold uppercase tracking-widest">Offline</span></>
+                              )}
+                            </div>
+                          </div>
+                          
+                          <div className="flex flex-col gap-2 mt-4">
+                            <p className="font-label-md text-label-md text-on-surface-variant flex items-center gap-3">
+                              <span className="material-symbols-outlined text-lg opacity-70">memory</span> {server.type} {server.version}
+                            </p>
+                            <p className="font-label-md text-label-md text-on-surface-variant flex items-center gap-3">
+                              <span className="material-symbols-outlined text-lg opacity-70">public</span> 127.0.0.1:{server.port}
+                            </p>
+                          </div>
+                          
+                          <div className="mt-6 pt-4 border-t border-surface-container-high flex justify-end">
+                            <button className="text-primary font-label-md text-label-md uppercase tracking-widest flex items-center gap-2 group-hover:gap-4 transition-all">
+                              Manage <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
         {/* ACTIVE SERVER VIEW */}
         {activeServer !== undefined && activeServerId !== null && (
           <>
-            <div className="bg-[#0a0a0a] border-b border-white/5 p-6 flex justify-between items-center shadow-sm z-10">
-              <h2 className="text-2xl font-bold text-white drop-shadow-md">{activeServer.name}</h2>
-              <div className="flex gap-3">
-                <button onClick={() => handleDelete(activeServer.id)} className="relative overflow-hidden group bg-[#050505]/60 backdrop-blur-xl border border-white/10 border-t-white/30 border-l-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.8),inset_0_1px_1px_rgba(255,255,255,0.2)] px-6 py-2.5 rounded-lg font-bold transition-all hover:border-red-500/60 hover:shadow-[0_8px_32px_rgba(248,113,113,0.2),inset_0_1px_2px_rgba(255,255,255,0.4)] text-red-400 hover:text-red-300">
-                  <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/20 opacity-30 group-hover:opacity-60 transition-opacity duration-500 pointer-events-none"></div>
-                  <div className="absolute -inset-[200%] bg-gradient-to-r from-transparent via-white/20 to-transparent -rotate-45 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-[4000ms] ease-in-out pointer-events-none"></div>
-                  <span className="relative z-10">DELETE</span>
-                </button>
-                <button onClick={() => activeServer.status === 'Online' ? handleStop(activeServer.id) : handleStart(activeServer.id)} className={`relative overflow-hidden group bg-[#050505]/60 backdrop-blur-xl border border-white/10 border-t-white/30 border-l-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.8),inset_0_1px_1px_rgba(255,255,255,0.2)] px-8 py-2.5 rounded-lg font-bold transition-all ${activeServer.status === 'Online' ? 'hover:border-red-500/60 hover:shadow-[0_8px_32px_rgba(248,113,113,0.2),inset_0_1px_2px_rgba(255,255,255,0.4)] text-red-400 hover:text-red-300' : 'hover:border-green-500/60 hover:shadow-[0_8px_32px_rgba(74,222,128,0.2),inset_0_1px_2px_rgba(255,255,255,0.4)] text-green-400 hover:text-green-300'}`}>
-                  <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/20 opacity-30 group-hover:opacity-60 transition-opacity duration-500 pointer-events-none"></div>
-                  <div className="absolute -inset-[200%] bg-gradient-to-r from-transparent via-white/20 to-transparent -rotate-45 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-[4000ms] ease-in-out pointer-events-none"></div>
-                  <span className="relative z-10">{activeServer.status === 'Online' ? 'STOP' : 'START'}</span>
-                </button>
-                <button onClick={() => handleRestart(activeServer.id)} className="relative overflow-hidden group bg-[#050505]/60 backdrop-blur-xl border border-white/10 border-t-white/30 border-l-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.8),inset_0_1px_1px_rgba(255,255,255,0.2)] px-8 py-2.5 rounded-lg font-bold transition-all hover:border-brand/60 hover:shadow-[0_8px_32px_rgba(255,215,0,0.2),inset_0_1px_2px_rgba(255,255,255,0.4)] text-brand hover:text-yellow-300">
-                  <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/20 opacity-30 group-hover:opacity-60 transition-opacity duration-500 pointer-events-none"></div>
-                  <div className="absolute -inset-[200%] bg-gradient-to-r from-transparent via-white/20 to-transparent -rotate-45 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-[4000ms] ease-in-out pointer-events-none"></div>
-                  <span className="relative z-10">RESTART</span>
-                </button>
+            <div className="bg-[#0a0a0a] border-b border-white/5 p-6 flex flex-col gap-6 shadow-sm z-10">
+              <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold text-white drop-shadow-md">{activeServer.name}</h2>
+                <div className="flex gap-3">
+                  <button onClick={() => handleDelete(activeServer.id)} className="relative overflow-hidden group bg-[#050505]/60 backdrop-blur-xl border border-white/10 border-t-white/30 border-l-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.8),inset_0_1px_1px_rgba(255,255,255,0.2)] px-6 py-2.5 rounded-lg font-bold transition-all hover:border-red-500/60 hover:shadow-[0_8px_32px_rgba(248,113,113,0.2),inset_0_1px_2px_rgba(255,255,255,0.4)] text-red-400 hover:text-red-300">
+                    <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/20 opacity-30 group-hover:opacity-60 transition-opacity duration-500 pointer-events-none"></div>
+                    <div className="absolute -inset-[200%] bg-gradient-to-r from-transparent via-white/20 to-transparent -rotate-45 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-[4000ms] ease-in-out pointer-events-none"></div>
+                    <span className="relative z-10">DELETE</span>
+                  </button>
+                  <button onClick={() => activeServer.status === 'Online' ? handleStop(activeServer.id) : handleStart(activeServer.id)} className={`relative overflow-hidden group bg-[#050505]/60 backdrop-blur-xl border border-white/10 border-t-white/30 border-l-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.8),inset_0_1px_1px_rgba(255,255,255,0.2)] px-8 py-2.5 rounded-lg font-bold transition-all ${activeServer.status === 'Online' ? 'hover:border-red-500/60 hover:shadow-[0_8px_32px_rgba(248,113,113,0.2),inset_0_1px_2px_rgba(255,255,255,0.4)] text-red-400 hover:text-red-300' : 'hover:border-green-500/60 hover:shadow-[0_8px_32px_rgba(74,222,128,0.2),inset_0_1px_2px_rgba(255,255,255,0.4)] text-green-400 hover:text-green-300'}`}>
+                    <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/20 opacity-30 group-hover:opacity-60 transition-opacity duration-500 pointer-events-none"></div>
+                    <div className="absolute -inset-[200%] bg-gradient-to-r from-transparent via-white/20 to-transparent -rotate-45 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-[4000ms] ease-in-out pointer-events-none"></div>
+                    <span className="relative z-10">{activeServer.status === 'Online' ? 'STOP' : 'START'}</span>
+                  </button>
+                  <button onClick={() => handleRestart(activeServer.id)} className="relative overflow-hidden group bg-[#050505]/60 backdrop-blur-xl border border-white/10 border-t-white/30 border-l-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.8),inset_0_1px_1px_rgba(255,255,255,0.2)] px-8 py-2.5 rounded-lg font-bold transition-all hover:border-brand/60 hover:shadow-[0_8px_32px_rgba(255,215,0,0.2),inset_0_1px_2px_rgba(255,255,255,0.4)] text-brand hover:text-yellow-300">
+                    <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/20 opacity-30 group-hover:opacity-60 transition-opacity duration-500 pointer-events-none"></div>
+                    <div className="absolute -inset-[200%] bg-gradient-to-r from-transparent via-white/20 to-transparent -rotate-45 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-[4000ms] ease-in-out pointer-events-none"></div>
+                    <span className="relative z-10">RESTART</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Sub Top Nav Bar for Server Tabs */}
+              <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                {[
+                  { id: 'console', label: 'Console', icon: 'terminal' },
+                  { id: 'options', label: 'Options', icon: 'settings' },
+                  { id: 'players', label: 'Players', icon: 'group' },
+                  { id: 'mods', label: 'Mods', icon: 'extension' },
+                  { id: 'software', label: 'Software', icon: 'memory' },
+                  { id: 'files', label: 'Files', icon: 'folder' }
+                ].map(tab => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id as any)}
+                    className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-label-md text-label-md transition-all whitespace-nowrap ${
+                      activeTab === tab.id 
+                      ? 'bg-primary/10 text-primary border border-primary/30 shadow-[0_0_15px_rgba(233,196,0,0.1)]' 
+                      : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high border border-transparent'
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-[18px]">{tab.icon}</span>
+                    {tab.label}
+                  </button>
+                ))}
               </div>
             </div>
 
-            <div className="flex-1 overflow-hidden relative min-h-0">
+            <div className="flex-1 overflow-hidden relative min-h-0 flex flex-col bg-surface-container-lowest">
               
               {/* TAB: CONSOLE */}
               {activeTab === 'console' && (
@@ -1057,6 +1123,7 @@ function App() {
           </>
         )}
       </div>
+      </main>
 
       {/* TOAST SYSTEM */}
       <div className="absolute bottom-6 right-6 z-50 flex flex-col gap-3 pointer-events-none">
