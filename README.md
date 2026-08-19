@@ -65,6 +65,54 @@ To package OmniHost into a standalone executable for distribution, run the build
   ```
 The compiled binaries and installers will be output to the `dist` directory.
 
+## ☁️ Google Cloud Free-Tier Tunnel Setup (FRP)
+
+OmniHost includes a built-in tunneling system (using Fast Reverse Proxy) to share your server globally without opening ports on your home router.
+
+You can host the central tunnel endpoint completely for **free** using Google Cloud Platform (GCP). 
+
+### 1. Create a Free GCP Instance
+1. Sign up for Google Cloud Platform and go to **Compute Engine** -> **VM Instances**.
+2. Click **Create Instance**.
+3. Select an `e2-micro` machine type (this is part of the "Always Free" tier).
+4. Choose an OS (e.g., Ubuntu 22.04 LTS).
+5. In the Firewall section, check "Allow HTTP/HTTPS traffic". Click **Create**.
+
+### 2. Configure Firewall Rules
+1. In the GCP search bar, search for **VPC Network** -> **Firewall**.
+2. Click **Create Firewall Rule**.
+3. Name it `omnihost-frp`.
+4. Set **Targets** to `All instances in the network`.
+5. Set **Source IPv4 ranges** to `0.0.0.0/0`.
+6. Under Protocols and Ports, select **Specified protocols and ports**. Check **tcp** and enter `7000, 25565`.
+7. Click **Create**.
+
+### 3. Install FRP on your Cloud VM
+SSH into your new VM using the GCP console and run the following commands to install and start the FRP Server:
+
+```bash
+# Download and extract the latest frp release
+wget https://github.com/fatedier/frp/releases/download/v0.58.0/frp_0.58.0_linux_amd64.tar.gz
+tar -zxvf frp_0.58.0_linux_amd64.tar.gz
+cd frp_0.58.0_linux_amd64/
+
+# Create the server configuration file
+cat <<EOF > frps.toml
+bindPort = 7000
+EOF
+
+# Start the server in the background
+nohup ./frps -c ./frps.toml &
+```
+
+### 4. Connect OmniHost
+1. Copy the **External IP** of your Google Cloud VM from the Compute Engine dashboard.
+2. In OmniHost, navigate to the `FrpAdapter.ts` (or the tunneling options tab when configuring).
+3. Ensure the target IP matches your new GCP External IP.
+4. When you start your OmniHost server and enable the tunnel, players can now connect to your server using `YOUR_GCP_IP:25565`!
+
+---
+
 ## 📁 Project Structure
 
 * `src/main/`: Electron backend logic. Handles server processes, proxies, Java management, IPC events, and API interactions.
