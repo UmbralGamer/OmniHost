@@ -26,9 +26,14 @@
     "adm-zip": "^0.6.0",
     "axios": "^1.19.0",
     "better-sqlite3": "^13.0.3",
+    "clsx": "^2.1.1",
     "extract-zip": "^2.0.1",
+    "lucide-react": "^1.32.0",
+    "motion": "^13.1.0",
     "prismarine-nbt": "^2.8.0",
-    "semver": "^7.8.5"
+    "react-icons": "^5.7.0",
+    "semver": "^7.8.5",
+    "tailwind-merge": "^3.6.0"
   },
   "devDependencies": {
     "@electron-toolkit/eslint-config-prettier": "^3.0.0",

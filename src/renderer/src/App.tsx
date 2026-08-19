@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
+import { MotionAccordion, MotionAccordionItem } from './components/unlumen-ui/motion-faqs-accordion'
+import { ListViewIcon } from './components/unlumen-ui/list-view-icon'
 
 function App() {
   const [servers, setServers] = useState<any[]>([])
@@ -434,12 +436,21 @@ function App() {
       <div className={`bg-[#111111] border-r border-gray-800 flex flex-col z-20 shadow-2xl transition-all duration-300 ease-in-out ${isSidebarOpen ? 'w-64' : 'w-16'}`}>
         <div className="p-6 border-b border-gray-800 flex items-center justify-between overflow-hidden h-[81px]">
           {isSidebarOpen && (
-            <h1 className="text-2xl font-black tracking-tight text-white flex items-center gap-2 whitespace-nowrap">
-              <span className="text-brand">Omni</span>Host
+            <h1 className="text-3xl font-sans text-white flex items-center whitespace-nowrap group cursor-default">
+              <span className="text-brand mr-2 flex">
+                {"Omni".split("").map((char, i) => (
+                  <span key={`omni-${i}`} className="transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-110" style={{ transitionDelay: `${i * 30}ms` }}>{char}</span>
+                ))}
+              </span>
+              <span className="flex">
+                {"Host".split("").map((char, i) => (
+                  <span key={`host-${i}`} className="transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-110" style={{ transitionDelay: `${(i + 4) * 30}ms` }}>{char}</span>
+                ))}
+              </span>
             </h1>
           )}
-          <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className={`text-gray-400 hover:text-white transition-colors p-1 ${!isSidebarOpen && 'mx-auto'}`}>
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16"/></svg>
+          <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className={`text-gray-400 hover:text-white transition-colors p-1 flex items-center justify-center w-8 h-8 ${!isSidebarOpen && 'mx-auto'}`}>
+            <ListViewIcon isActive={!isSidebarOpen} className="w-5 h-5" />
           </button>
         </div>
 
@@ -450,35 +461,68 @@ function App() {
           </div>
           <div className={`px-6 py-4 text-xs font-bold text-gray-600 uppercase tracking-wider whitespace-nowrap transition-opacity duration-200 ${isSidebarOpen ? 'opacity-100' : 'opacity-0 hidden'}`}>Your Servers</div>
 
-          {servers.map(server => (
-            <div key={server.id} className="mb-2">
-              <div onClick={() => { 
-                if (activeServerId === server.id) {
+          {isSidebarOpen ? (
+            <MotionAccordion
+              gap={4}
+              value={servers.findIndex(s => s.id === activeServerId) === -1 ? null : servers.findIndex(s => s.id === activeServerId)}
+              onValueChange={(idx) => {
+                if (idx === null) {
                   setActiveServerId(null);
                 } else {
-                  setActiveServerId(server.id); 
-                  setActiveTab('console'); 
+                  setActiveServerId(servers[idx].id);
+                  setActiveTab('console');
                 }
-              }} className={`px-6 py-3 cursor-pointer flex justify-between items-center transition-colors whitespace-nowrap ${activeServerId === server.id ? 'bg-[#111111] text-white font-bold' : 'text-gray-400 hover:text-white hover:bg-white/5 font-semibold'}`}>
-                {isSidebarOpen ? (
-                  <span className="truncate pr-2 transition-opacity duration-200">{server.name}</span>
-                ) : (
-                  <div className="flex-1 flex justify-center">
-                    <span className="text-xs font-bold bg-gray-800 px-2 py-1 rounded shadow-inner truncate max-w-full text-center">{server.name.charAt(0).toUpperCase()}</span>
+              }}
+              items={servers.map(server => ({
+                question: (
+                  <div className="flex w-full items-center justify-between">
+                    <span className="truncate pr-2 text-sm font-semibold">{server.name}</span>
+                    <div className={`w-2 h-2 rounded-full flex-shrink-0 ${server.status === 'Online' ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-red-500'}`}></div>
                   </div>
-                )}
-                {isSidebarOpen && <div className={`w-2 h-2 rounded-full flex-shrink-0 ${server.status === 'Online' ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-red-500'}`}></div>}
-              </div>
-
-              {activeServerId === server.id && isSidebarOpen && (
-                <div className="bg-[#050505]/80 py-2 border-y border-white/5 shadow-inner">
-                  {[{ id: 'console', label: 'Console' }, { id: 'options', label: 'Options' }, { id: 'players', label: 'Players' }, { id: 'software', label: 'Software' }].map(tab => (
-                    <div key={tab.id} onClick={() => { setActiveTab(tab.id as any); setSelectedPlayer(null); }} className={`pl-10 pr-6 py-2 cursor-pointer text-sm font-semibold transition-all whitespace-nowrap ${activeTab === tab.id ? 'text-brand bg-brand/5 border-l-2 border-brand' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5 border-l-2 border-transparent'}`}>{tab.label}</div>
-                  ))}
+                ),
+                answer: (
+                  <div className="flex flex-col gap-1">
+                    {[{ id: 'console', label: 'Console' }, { id: 'options', label: 'Options' }, { id: 'players', label: 'Players' }, { id: 'software', label: 'Software' }].map(tab => (
+                      <div key={tab.id} onClick={() => { setActiveTab(tab.id as any); setSelectedPlayer(null); }} className={`px-4 py-2 cursor-pointer rounded-lg text-sm font-semibold transition-all whitespace-nowrap ${activeTab === tab.id ? 'text-brand bg-brand/10' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>{tab.label}</div>
+                    ))}
+                  </div>
+                )
+              }))}
+            />
+          ) : (
+            servers.map(server => (
+              <div key={server.id} className="mb-2">
+                <div onClick={() => { 
+                  if (activeServerId === server.id) {
+                    setActiveServerId(null);
+                  } else {
+                    setActiveServerId(server.id); 
+                    setActiveTab('console'); 
+                  }
+                }} className={`px-6 py-3 cursor-pointer flex justify-center items-center transition-colors whitespace-nowrap ${activeServerId === server.id ? 'bg-[#111111] text-white font-bold' : 'text-gray-400 hover:text-white hover:bg-white/5 font-semibold'}`}>
+                  {server.game.toLowerCase().includes('minecraft') ? (
+                    <div className="w-6 h-6 bg-gray-800 rounded shadow-inner flex items-center justify-center text-gray-200">
+                      <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+                        <rect x="3" y="6" width="6" height="6" />
+                        <rect x="15" y="6" width="6" height="6" />
+                        <rect x="9" y="12" width="6" height="9" />
+                        <rect x="6" y="15" width="3" height="6" />
+                        <rect x="15" y="15" width="3" height="6" />
+                      </svg>
+                    </div>
+                  ) : server.game.toLowerCase().includes('palworld') ? (
+                    <div className="w-6 h-6 bg-gray-800 rounded shadow-inner flex items-center justify-center text-gray-200">
+                      <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+                        <path fillRule="evenodd" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zM4 12c0-4.42 3.58-8 8-8s8 3.58 8 8-3.58 8-8 8-8-3.58-8-8zm3-3l5 8 5-8h-2.5L12 13.5 9.5 9H7z" />
+                      </svg>
+                    </div>
+                  ) : (
+                    <span className="text-xs font-bold bg-gray-800 px-2 py-1 rounded shadow-inner truncate max-w-full text-center">{server.name.charAt(0).toUpperCase()}</span>
+                  )}
                 </div>
-              )}
-            </div>
-          ))}
+              </div>
+            ))
+          )}
         </div>
 
         <div className="p-4 border-t border-gray-800 bg-[#121824] flex justify-center">
