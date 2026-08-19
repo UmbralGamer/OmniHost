@@ -5,10 +5,12 @@ import icon from '../../resources/icon.png?asset'
 import fsPromises from 'fs/promises'
 import axios from 'axios'
 import semver from 'semver'
+import os from 'os'
 
 // Import our custom modules
 import { getServers, createServer, deleteServer, updateServerSoftware } from './db'
 import { MinecraftAdapter } from './adapters/MinecraftAdapter'
+import { WakeProxy } from './adapters/WakeProxy'
 import { FrpAdapter } from './adapters/FrpAdapter'
 import { JavaManager } from './adapters/JavaManager'
 import { spawn } from 'child_process'
@@ -62,6 +64,7 @@ app.whenReady().then(() => {
 
   // --- 1. INITIALIZE SYSTEMS ---
   const activeServers: Record<number, MinecraftAdapter> = {};
+  const activeProxies: Record<number, WakeProxy> = {};
   const tunnelProvider = new FrpAdapter();
 
   // --- 2. IPC HANDLERS (THE BRIDGE) ---
@@ -240,6 +243,45 @@ app.whenReady().then(() => {
       console.error(e.message);
       return null;
     }
+  });
+
+  
+  
+  ipcMain.handle('toggle-auto-start', async (_, id, enabled) => {
+    try {
+      if (enabled) {
+        if (!activeServers[id]) activeServers[id] = new MinecraftAdapter(id);
+        const serverDir = join(app.getPath('userData'), 'servers', id.toString());
+        const propsPath = join(serverDir, 'server.properties');
+        let port = 25565;
+        if (await exists(propsPath)) {
+          const props = await fsPromises.readFile(propsPath, 'utf-8');
+          const portMatch = props.match(/server-port=(\d+)/);
+          if (portMatch) port = parseInt(portMatch[1], 10);
+        }
+        
+        if (!activeProxies[id]) {
+          activeProxies[id] = new WakeProxy(activeServers[id], port);
+        }
+        activeProxies[id].startListening();
+      } else {
+        if (activeProxies[id]) {
+          activeProxies[id].stopListening();
+          delete activeProxies[id];
+        }
+      }
+      return true;
+    } catch (e: any) {
+      console.error('WakeProxy error:', e);
+      return false;
+    }
+  });
+
+  ipcMain.handle('get-system-info', () => {
+    return {
+      totalMem: os.totalmem(),
+      cpus: os.cpus().length
+    };
   });
 
   ipcMain.handle('get-server-meta', async (_, id) => {
@@ -677,6 +719,81 @@ app.whenReady().then(() => {
       return await activeServers[id].getPlayerInventory(playerName);
     }
     return null;
+  });
+
+  
+  // --- File Manager ---
+  ipcMain.handle('list-dir', async (_, id, relPath) => {
+    try {
+      const serverDir = join(app.getPath('userData'), 'servers', id.toString());
+      // Prevent directory traversal
+      const targetPath = join(serverDir, relPath);
+      if (!targetPath.startsWith(serverDir)) return [];
+      
+      if (!await exists(targetPath)) return [];
+      
+      const files = await fsPromises.readdir(targetPath);
+      const result: any[] = [];
+      for (const f of files) {
+        try {
+          const stat = await fsPromises.stat(join(targetPath, f));
+          result.push({
+            name: f,
+            isDirectory: stat.isDirectory(),
+            size: stat.size,
+            lastModified: stat.mtimeMs
+          });
+        } catch (e) {}
+      }
+      return result;
+    } catch (e: any) {
+      console.error(e.message);
+      return [];
+    }
+  });
+
+  ipcMain.handle('delete-item', async (_, id, relPath) => {
+    try {
+      const serverDir = join(app.getPath('userData'), 'servers', id.toString());
+      const targetPath = join(serverDir, relPath);
+      if (!targetPath.startsWith(serverDir) || targetPath === serverDir) return false;
+      if (await exists(targetPath)) {
+        await fsPromises.rm(targetPath, { recursive: true, force: true });
+        return true;
+      }
+      return false;
+    } catch (e: any) {
+      console.error(e.message);
+      return false;
+    }
+  });
+
+  ipcMain.handle('read-file', async (_, id, relPath) => {
+    try {
+      const serverDir = join(app.getPath('userData'), 'servers', id.toString());
+      const targetPath = join(serverDir, relPath);
+      if (!targetPath.startsWith(serverDir)) return null;
+      if (await exists(targetPath)) {
+        return await fsPromises.readFile(targetPath, 'utf-8');
+      }
+      return null;
+    } catch (e: any) {
+      console.error(e.message);
+      return null;
+    }
+  });
+
+  ipcMain.handle('write-file', async (_, id, relPath, content) => {
+    try {
+      const serverDir = join(app.getPath('userData'), 'servers', id.toString());
+      const targetPath = join(serverDir, relPath);
+      if (!targetPath.startsWith(serverDir)) return false;
+      await fsPromises.writeFile(targetPath, content, 'utf-8');
+      return true;
+    } catch (e: any) {
+      console.error(e.message);
+      return false;
+    }
   });
 
   ipcMain.handle('get-cache-info', () => {

@@ -9,7 +9,9 @@ export class MinecraftAdapter {
   serverId: number;
   serverDir: string;
   process: ChildProcess | null = null;
-  onlinePlayers: string[] = []; 
+  onlinePlayers: string[] = [];
+  autoStopTimer: NodeJS.Timeout | null = null;
+  omnihostMeta: any = {}; 
 
   constructor(serverId: number) {
     this.serverId = serverId;
@@ -123,7 +125,11 @@ export class MinecraftAdapter {
     const startBatPath = join(this.serverDir, 'start.bat');
     
     let targetExecutable = javaPath;
-    let targetArgs = ['-Xmx2G', '-jar', 'server.jar', 'nogui'];
+    const ramLimit = this.omnihostMeta.ram ? `-Xmx${this.omnihostMeta.ram}G` : '-Xmx2G';
+    const minRam = this.omnihostMeta.ram ? `-Xms${this.omnihostMeta.ram}G` : '-Xms2G';
+    const cpuLimit = this.omnihostMeta.cpu ? `-XX:ActiveProcessorCount=${this.omnihostMeta.cpu}` : '';
+    let targetArgs = [ramLimit, minRam, '-jar', 'server.jar', 'nogui'];
+    if (cpuLimit) targetArgs.splice(2, 0, cpuLimit);
     let env = { ...process.env };
 
     if (javaPath !== 'java') {
@@ -143,7 +149,9 @@ export class MinecraftAdapter {
       const files = fs.readdirSync(this.serverDir);
       const forgeJar = files.find(f => (f.startsWith('forge-') || f.startsWith('neoforge-')) && f.endsWith('.jar') && !f.includes('installer'));
       if (forgeJar) {
-        targetArgs = ['-Xmx2G', '-jar', forgeJar, 'nogui'];
+        targetArgs = [ramLimit, minRam];
+        if (cpuLimit) targetArgs.push(cpuLimit);
+        targetArgs.push('-jar', forgeJar, 'nogui');
       } else if (!fs.existsSync(jarPath)) {
         this.sendLog(`[System Error] server.jar or modloader not found! Please delete and recreate this server.`);
         return;
@@ -185,6 +193,8 @@ export class MinecraftAdapter {
       
       const p = this.process;
       this.process = null;
+      if (this.autoStopTimer) clearTimeout(this.autoStopTimer);
+      this.autoStopTimer = null;
       this.onlinePlayers = []; 
       this.sendPlayerUpdate();
 

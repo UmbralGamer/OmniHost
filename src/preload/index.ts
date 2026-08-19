@@ -42,7 +42,10 @@ const api = {
   },
   
   // Mod Browser
-  getServerMeta: (id: number) => ipcRenderer.invoke('get-server-meta', id),
+    getServerMeta: (id: number) => ipcRenderer.invoke('get-server-meta', id),
+  updateServerMeta: (id: number, changes: any) => ipcRenderer.invoke('update-server-meta', id, changes),
+  getSystemInfo: () => ipcRenderer.invoke('get-system-info'),
+  toggleAutoStart: (id: number, enabled: boolean) => ipcRenderer.invoke('toggle-auto-start', id, enabled),
   getCurseforgeMod: (modId: number) => ipcRenderer.invoke('get-curseforge-mod', modId),
   getCurseforgeFile: (modId: number, fileId: number) => ipcRenderer.invoke('get-curseforge-file', modId, fileId),
   searchCurseforgeMods: (search: string, type: string, version: string, page?: number, classId?: number, sortField?: number) => ipcRenderer.invoke('search-curseforge-mods', search, type, version, page, classId, sortField),
