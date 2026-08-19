@@ -2,7 +2,7 @@ import { app, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
-import fs from 'fs'
+import fsPromises from 'fs/promises'
 import axios from 'axios'
 import semver from 'semver'
 
@@ -14,6 +14,16 @@ import { JavaManager } from './adapters/JavaManager'
 import { spawn } from 'child_process'
 import extractZip from 'extract-zip'
 import { CacheManager } from './CacheManager';
+
+
+async function exists(path: string) {
+  try {
+    await fsPromises.access(path);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 const CURSEFORGE_API_KEY = '$2a$10$WLjUD.aJlcjuSSdEOByujetqwwhUeTTfS2AsFhIOq31vLq./E1nRO';
 
@@ -61,7 +71,7 @@ app.whenReady().then(() => {
     return getServers()
   })
 
-  ipcMain.handle('delete-server', (_, id) => {
+  ipcMain.handle('delete-server', async (_, id) => {
     deleteServer(id);
     if (activeServers[id]) {
       activeServers[id].stop();
@@ -69,15 +79,15 @@ app.whenReady().then(() => {
     }
     const serversDir = join(app.getPath('userData'), 'servers');
     const srvDir = join(serversDir, id.toString());
-    if (fs.existsSync(srvDir)) fs.rmSync(srvDir, { recursive: true, force: true });
+    if (await exists(srvDir)) await fsPromises.rm(srvDir, { recursive: true, force: true });
     return true;
   });
 
   ipcMain.handle('create-server', async (_, name, type, version) => {
     const id = createServer(name, type);
     const serverDir = join(app.getPath('userData'), 'servers', id.toString());
-    if (!fs.existsSync(serverDir)) fs.mkdirSync(serverDir, { recursive: true });
-    fs.writeFileSync(join(serverDir, 'omnihost.json'), JSON.stringify({ type, version }));
+    if (!await exists(serverDir)) await fsPromises.mkdir(serverDir, { recursive: true });
+    await fsPromises.writeFile(join(serverDir, 'omnihost.json'), JSON.stringify({ type, version }));
     return id;
   })
 
@@ -202,9 +212,9 @@ app.whenReady().then(() => {
   ipcMain.handle('get-server-meta', async (_, id) => {
     const serverDir = join(app.getPath('userData'), 'servers', id.toString());
     const metaPath = join(serverDir, 'omnihost.json');
-    if (fs.existsSync(metaPath)) {
+    if (await exists(metaPath)) {
       try {
-        return JSON.parse(fs.readFileSync(metaPath, 'utf-8'));
+        return JSON.parse(await fsPromises.readFile(metaPath, 'utf-8'));
       } catch (e) {}
     }
     return null;
@@ -266,13 +276,13 @@ app.whenReady().then(() => {
       else if (classId === 12) destFolder = 'resourcepacks';
 
       const targetDir = join(serverDir, destFolder);
-      if (!fs.existsSync(targetDir)) {
-        fs.mkdirSync(targetDir, { recursive: true });
+      if (!await exists(targetDir)) {
+        await fsPromises.mkdir(targetDir, { recursive: true });
       }
       
       const filePath = join(targetDir, fileName);
       const cachedFile = await CacheManager.getOrDownload('mods', downloadUrl, fileName);
-      fs.copyFileSync(cachedFile, filePath);
+      await fsPromises.copyFile(cachedFile, filePath);
 
       return true;
     } catch (e: any) {
@@ -285,13 +295,15 @@ app.whenReady().then(() => {
     try {
       const serverDir = join(app.getPath('userData'), 'servers', id.toString());
       const modsDir = join(serverDir, 'mods');
-      if (!fs.existsSync(modsDir)) return [];
+      if (!await exists(modsDir)) return [];
       
-      const files = fs.readdirSync(modsDir);
-      return files.filter(f => f.endsWith('.jar')).map(f => {
-        const stats = fs.statSync(join(modsDir, f));
+      const files = await fsPromises.readdir(modsDir);
+      const jarFiles = files.filter(f => f.endsWith('.jar'));
+      const modsInfo = await Promise.all(jarFiles.map(async f => {
+        const stats = await fsPromises.stat(join(modsDir, f));
         return { name: f, size: stats.size };
-      });
+      }));
+      return modsInfo;
     } catch (e: any) {
       console.error(e.message);
       return [];
@@ -302,8 +314,8 @@ app.whenReady().then(() => {
     try {
       const serverDir = join(app.getPath('userData'), 'servers', id.toString());
       const filePath = join(serverDir, 'mods', fileName);
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
+      if (await exists(filePath)) {
+        await fsPromises.unlink(filePath);
         return true;
       }
       return false;
@@ -361,33 +373,33 @@ app.whenReady().then(() => {
         }
       );
       
-      fs.copyFileSync(cachedFile, zipPath);
+      await fsPromises.copyFile(cachedFile, zipPath);
       
       event.sender.send(`download-progress-${id}`, 100, 'Extracting pack...');
       
       await extractZip(zipPath, { dir: serverDir });
-      fs.unlinkSync(zipPath);
+      await fsPromises.unlink(zipPath);
 
       let overridesDir = join(serverDir, 'overrides');
       let modloader = 'Forge';
       
       if (isServerPack) {
         // Find if extracted into a subfolder
-        const files = fs.readdirSync(serverDir);
+        const files = await fsPromises.readdir(serverDir);
         if (files.length === 2 && files.includes('omnihost.json')) {
            const sub = files.find(f => f !== 'omnihost.json');
-           if (sub && fs.statSync(join(serverDir, sub)).isDirectory()) {
+           if (sub && (await fsPromises.stat(join(serverDir, sub))).isDirectory()) {
                const subPath = join(serverDir, sub);
-               for (const subFile of fs.readdirSync(subPath)) {
-                  fs.renameSync(join(subPath, subFile), join(serverDir, subFile));
+               for (const subFile of await fsPromises.readdir(subPath)) {
+                  await fsPromises.rename(join(subPath, subFile), join(serverDir, subFile));
                }
-               fs.rmdirSync(subPath);
+               await fsPromises.rmdir(subPath);
            }
         }
         event.sender.send(`download-progress-${id}`, 100, 'Server Pack Extracted! Installing Modloader if needed...');
         
         // Search for Forge or NeoForge installer in the extracted files and run it
-        const extracted = fs.readdirSync(serverDir);
+        const extracted = await fsPromises.readdir(serverDir);
         const installer = extracted.find(f => (f.startsWith('forge-') || f.startsWith('neoforge-')) && f.includes('installer') && f.endsWith('.jar'));
         if (installer) {
            let javaRequired: 8 | 16 | 17 | 21 | 25 = 17;
@@ -405,16 +417,16 @@ app.whenReady().then(() => {
              proc.on('close', resolve);
              proc.on('error', reject);
            });
-           fs.unlinkSync(join(serverDir, installer));
+           await fsPromises.unlink(join(serverDir, installer));
         }
       } else {
          event.sender.send(`download-progress-${id}`, 100, 'Parsing manifest and downloading mods...');
          const manifestPath = join(serverDir, 'manifest.json');
-         if (!fs.existsSync(manifestPath)) throw new Error('Invalid Client Pack: Missing manifest.json');
+         if (!await exists(manifestPath)) throw new Error('Invalid Client Pack: Missing manifest.json');
          
-         const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+         const manifest = JSON.parse(await fsPromises.readFile(manifestPath, 'utf-8'));
          const modsDir = join(serverDir, 'mods');
-         if (!fs.existsSync(modsDir)) fs.mkdirSync(modsDir);
+         if (!await exists(modsDir)) await fsPromises.mkdir(modsDir);
          
          const modFiles = manifest.files || [];
          let count = 0;
@@ -432,19 +444,19 @@ app.whenReady().then(() => {
                 const nameParts = dUrl.split('/');
                 const fileName = decodeURIComponent(nameParts[nameParts.length - 1]);
                 const cachedOverride = await CacheManager.getOrDownload('mods', dUrl, fileName);
-                fs.copyFileSync(cachedOverride, join(modsDir, fileName));
+                await fsPromises.copyFile(cachedOverride, join(modsDir, fileName));
              }
            } catch(e) { console.error('Failed to download mod', mod.projectID); }
          }
          
-         if (fs.existsSync(overridesDir)) {
+         if (await exists(overridesDir)) {
            const cp = require('child_process');
            if (process.platform === 'win32') {
                cp.execSync(`xcopy "${overridesDir}\\*" "${serverDir}\\" /s /e /y`);
            } else {
                cp.execSync(`cp -r "${overridesDir}/"* "${serverDir}/"`);
            }
-           fs.rmSync(overridesDir, { recursive: true, force: true });
+           await fsPromises.rm(overridesDir, { recursive: true, force: true });
          }
          
          if (manifest.minecraft.modLoaders && manifest.minecraft.modLoaders.length > 0) {
@@ -454,10 +466,10 @@ app.whenReady().then(() => {
          }
          
          const configPath = join(serverDir, 'omnihost.json');
-         if (fs.existsSync(configPath)) {
-            const conf = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+         if (await exists(configPath)) {
+            const conf = JSON.parse(await fsPromises.readFile(configPath, 'utf-8'));
             conf.type = modloader;
-            fs.writeFileSync(configPath, JSON.stringify(conf, null, 2));
+            await fsPromises.writeFile(configPath, JSON.stringify(conf, null, 2));
          }
       }
       
@@ -527,7 +539,7 @@ app.whenReady().then(() => {
         }
       );
       
-      fs.copyFileSync(cachedFile, targetPath);
+      await fsPromises.copyFile(cachedFile, targetPath);
 
       if (isInstaller) {
         event.sender.send(`download-progress-${id}`, 100, 'Installing Modloader...');
@@ -553,8 +565,8 @@ app.whenReady().then(() => {
           proc.on('error', reject);
         });
 
-        if (fs.existsSync(installerPath)) {
-          fs.unlinkSync(installerPath);
+        if (await exists(installerPath)) {
+          await fsPromises.unlink(installerPath);
         }
       }
 
@@ -596,28 +608,28 @@ app.whenReady().then(() => {
   // Config Editor
   ipcMain.handle('read-config', async (_, id) => {
     const configPath = join(app.getPath('userData'), 'servers', id.toString(), 'server.properties');
-    if (fs.existsSync(configPath)) return fs.readFileSync(configPath, 'utf-8');
+    if (await exists(configPath)) return await fsPromises.readFile(configPath, 'utf-8');
     return '# No server.properties found.\n# Start the server once to generate this file automatically!';
   });
 
   ipcMain.handle('write-config', async (_, id, data) => {
     const serverDir = join(app.getPath('userData'), 'servers', id.toString());
-    if (!fs.existsSync(serverDir)) fs.mkdirSync(serverDir, { recursive: true });
-    fs.writeFileSync(join(serverDir, 'server.properties'), data);
+    if (!await exists(serverDir)) await fsPromises.mkdir(serverDir, { recursive: true });
+    await fsPromises.writeFile(join(serverDir, 'server.properties'), data);
     return true;
   });
 
   // Player JSON Editor
   ipcMain.handle('read-json', async (_, id, filename) => {
     const filePath = join(app.getPath('userData'), 'servers', id.toString(), `${filename}.json`);
-    if (fs.existsSync(filePath)) return JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+    if (await exists(filePath)) return JSON.parse(await fsPromises.readFile(filePath, 'utf-8'));
     return [];
   });
 
   ipcMain.handle('write-json', async (_, id, filename, data) => {
     const serverDir = join(app.getPath('userData'), 'servers', id.toString());
-    if (!fs.existsSync(serverDir)) fs.mkdirSync(serverDir, { recursive: true });
-    fs.writeFileSync(join(serverDir, `${filename}.json`), JSON.stringify(data, null, 2));
+    if (!await exists(serverDir)) await fsPromises.mkdir(serverDir, { recursive: true });
+    await fsPromises.writeFile(join(serverDir, `${filename}.json`), JSON.stringify(data, null, 2));
     return true;
   });
 
