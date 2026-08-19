@@ -94,11 +94,20 @@ app.whenReady().then(() => {
 
   ipcMain.handle('get-paper-versions', async () => {
     try {
-      const res = await axios.get('https://api.papermc.io/v2/projects/paper');
-      return res.data.versions.filter((v: string) => {
+      const res = await axios.get('https://fill.papermc.io/v3/projects/paper', { headers: { 'User-Agent': 'OmniHost/1.0.0 (contact@example.com)' } });
+      const versionsObj = res.data.versions;
+      let allVersions: string[] = [];
+      for (const key of Object.keys(versionsObj)) {
+        allVersions = allVersions.concat(versionsObj[key]);
+      }
+      return allVersions.filter((v: string) => {
         const coerced = semver.coerce(v);
         return coerced && semver.gte(coerced, '1.16.0');
-      }).reverse(); // newest first
+      }).sort((a, b) => {
+        const cA = semver.coerce(a);
+        const cB = semver.coerce(b);
+        return (cA && cB) ? semver.rcompare(cA, cB) : 0;
+      }); // newest first
     } catch (e) {
       console.error(e);
       return [];
@@ -364,11 +373,10 @@ app.whenReady().then(() => {
         const vRes = await axios.get(vData.url);
         downloadUrl = vRes.data.downloads.server.url;
       } else if (type === 'Paper') {
-        const buildsRes = await axios.get(`https://api.papermc.io/v2/projects/paper/versions/${version}`);
+        const buildsRes = await axios.get(`https://fill.papermc.io/v3/projects/paper/versions/${version}`, { headers: { 'User-Agent': 'OmniHost/1.0.0 (contact@example.com)' } });
         const build = buildsRes.data.builds[buildsRes.data.builds.length - 1];
-        const buildData = await axios.get(`https://api.papermc.io/v2/projects/paper/versions/${version}/builds/${build}`);
-        const dlName = buildData.data.downloads.application.name;
-        downloadUrl = `https://api.papermc.io/v2/projects/paper/versions/${version}/builds/${build}/downloads/${dlName}`;
+        const buildData = await axios.get(`https://fill.papermc.io/v3/projects/paper/versions/${version}/builds/${build}`, { headers: { 'User-Agent': 'OmniHost/1.0.0 (contact@example.com)' } });
+        downloadUrl = buildData.data.downloads['server:default'].url;
       } else if (type === 'Fabric') {
         const loaderRes = await axios.get('https://meta.fabricmc.net/v2/versions/loader');
         const loader = loaderRes.data.find((v: any) => v.stable).version;
