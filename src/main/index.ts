@@ -2,6 +2,7 @@ import { app, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import fs from 'fs'
 import fsPromises from 'fs/promises'
 import fs from 'fs'
 import axios from 'axios'
@@ -284,6 +285,25 @@ app.whenReady().then(() => {
       cpus: os.cpus().length
     };
   });
+
+  
+  ipcMain.handle('update-server-meta', async (_, id, changes) => {
+    const serverDir = join(app.getPath('userData'), 'servers', id.toString());
+    const metaPath = join(serverDir, 'omnihost.json');
+    let meta = {};
+    if (fs.existsSync(metaPath)) {
+      try { meta = JSON.parse(fs.readFileSync(metaPath, 'utf-8')); } catch(e){}
+    }
+    meta = { ...meta, ...changes };
+    fs.writeFileSync(metaPath, JSON.stringify(meta, null, 2));
+    
+    // Live update the running instance
+    if (activeServers[id]) {
+      activeServers[id].omnihostMeta = meta;
+    }
+    return true;
+  });
+
 
   ipcMain.handle('get-server-meta', async (_, id) => {
     const serverDir = join(app.getPath('userData'), 'servers', id.toString());
@@ -658,6 +678,12 @@ app.whenReady().then(() => {
     if (!activeServers[id]) {
       activeServers[id] = new MinecraftAdapter(id);
     }
+    
+    // CRITICAL: Stop proxy if it exists to free the port!
+    if (activeProxies[id]) {
+       activeProxies[id].stopListening();
+    }
+    
     await activeServers[id].start();
     return true;
   });

@@ -54,6 +54,13 @@ const api = {
   deleteMod: (id: number, fileName: string) => ipcRenderer.invoke('delete-mod', id, fileName),
   
   // Cache
+  
+  // File Manager
+  listDir: (id: number, relPath: string) => ipcRenderer.invoke('list-dir', id, relPath),
+  deleteItem: (id: number, relPath: string) => ipcRenderer.invoke('delete-item', id, relPath),
+  readFile: (id: number, relPath: string) => ipcRenderer.invoke('read-file', id, relPath),
+  writeFile: (id: number, relPath: string, content: string) => ipcRenderer.invoke('write-file', id, relPath, content),
+
   getCacheInfo: () => ipcRenderer.invoke('get-cache-info'),
   clearCache: () => ipcRenderer.invoke('clear-cache')
 }

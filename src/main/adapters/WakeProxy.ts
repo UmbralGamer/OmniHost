@@ -16,14 +16,18 @@ export class WakeProxy {
 
     this.server = net.createServer((socket) => {
       this.adapter.sendLog(`[WakeProxy] Connection detected from ${socket.remoteAddress}! Waking up server...`);
-      socket.end(); // Close connection immediately
+      socket.destroy(); // Destroy immediately to free port
       
-      this.stopListening(); // Free the port!
-      
-      // Delay slightly to ensure port is fully freed before starting
-      setTimeout(() => {
-        this.adapter.start();
-      }, 500);
+      if (this.server) {
+        this.server.close(() => {
+          this.adapter.sendLog(`[WakeProxy] Port fully released. Starting Minecraft...`);
+          // Use a small delay just to let OS clear TCP TIME_WAIT
+          setTimeout(() => {
+            this.adapter.start();
+          }, 1000);
+        });
+        this.server = null;
+      }
     });
 
     this.server.on('error', (err: any) => {

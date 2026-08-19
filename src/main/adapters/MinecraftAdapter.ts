@@ -93,6 +93,7 @@ export class MinecraftAdapter {
     if (fs.existsSync(metaPath)) {
       try {
         const meta = JSON.parse(fs.readFileSync(metaPath, 'utf-8'));
+        this.omnihostMeta = meta;
         if (meta.version) version = meta.version;
       } catch(e) {}
     }
@@ -158,6 +159,7 @@ export class MinecraftAdapter {
       }
     }
 
+    this.sendLog(`[System] Launching Java with args: ${targetArgs.join(' ')}`);
     this.process = spawn(targetExecutable, targetArgs, { cwd: this.serverDir, env });
 
     const readline = require('readline');
