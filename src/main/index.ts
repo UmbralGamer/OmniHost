@@ -13,11 +13,12 @@ import { FrpAdapter } from './adapters/FrpAdapter'
 import { JavaManager } from './adapters/JavaManager'
 import { spawn } from 'child_process'
 import extractZip from 'extract-zip'
+import { CacheManager } from './CacheManager';
 
 const CURSEFORGE_API_KEY = '$2a$10$WLjUD.aJlcjuSSdEOByujetqwwhUeTTfS2AsFhIOq31vLq./E1nRO';
 
-// Disable hardware acceleration to fix Windows UI freeze/hang issues with Framer Motion
-app.disableHardwareAcceleration()
+// Fix Windows UI freeze/hang issues with Framer Motion without disabling hardware acceleration entirely
+app.commandLine.appendSwitch('disable-features', 'CalculateNativeWinOcclusion');
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -195,6 +196,113 @@ app.whenReady().then(() => {
     }
   });
 
+  ipcMain.handle('get-server-meta', async (_, id) => {
+    const serverDir = join(app.getPath('userData'), 'servers', id.toString());
+    const metaPath = join(serverDir, 'omnihost.json');
+    if (fs.existsSync(metaPath)) {
+      try {
+        return JSON.parse(fs.readFileSync(metaPath, 'utf-8'));
+      } catch (e) {}
+    }
+    return null;
+  });
+
+  ipcMain.handle('search-curseforge-mods', async (_, search, type, version, page, classId = 6, sortField = 2) => {
+    try {
+      let modLoaderType = 0;
+      if (type === 'Forge') modLoaderType = 1;
+      else if (type === 'Fabric') modLoaderType = 4;
+      else if (type === 'NeoForge') modLoaderType = 6;
+      
+      const index = page * 20;
+      let url = `https://api.curseforge.com/v1/mods/search?gameId=432&classId=${classId}&sortField=${sortField}&sortOrder=desc&gameVersion=${version}&modLoaderType=${modLoaderType}&index=${index}&pageSize=20`;
+      if (search) url += `&searchFilter=${encodeURIComponent(search)}`;
+      
+      const res = await axios.get(url, { headers: { 'x-api-key': CURSEFORGE_API_KEY } });
+      return res.data.data;
+    } catch (e: any) {
+      console.error(e.message);
+      return [];
+    }
+  });
+
+  ipcMain.handle('get-curseforge-mod', async (_, modId) => {
+    try {
+      const res = await axios.get(`https://api.curseforge.com/v1/mods/${modId}`, { headers: { 'x-api-key': CURSEFORGE_API_KEY } });
+      return res.data.data;
+    } catch (e: any) {
+      console.error(e.message);
+      return null;
+    }
+  });
+
+  ipcMain.handle('get-curseforge-file', async (_, modId, fileId) => {
+    try {
+      const res = await axios.get(`https://api.curseforge.com/v1/mods/${modId}/files/${fileId}`, { headers: { 'x-api-key': CURSEFORGE_API_KEY } });
+      return res.data.data;
+    } catch (e: any) {
+      console.error(e.message);
+      return null;
+    }
+  });
+
+  ipcMain.handle('install-curseforge-mod', async (_, id, downloadUrl, fileName, classId = 6) => {
+    try {
+      const serverDir = join(app.getPath('userData'), 'servers', id.toString());
+      
+      let destFolder = 'mods';
+      if (classId === 5) destFolder = 'plugins';
+      else if (classId === 6945) destFolder = join('world', 'datapacks');
+      else if (classId === 12) destFolder = 'resourcepacks';
+
+      const targetDir = join(serverDir, destFolder);
+      if (!fs.existsSync(targetDir)) {
+        fs.mkdirSync(targetDir, { recursive: true });
+      }
+      
+      const filePath = join(targetDir, fileName);
+      const cachedFile = await CacheManager.getOrDownload('mods', downloadUrl, fileName);
+      fs.copyFileSync(cachedFile, filePath);
+
+      return true;
+    } catch (e: any) {
+      console.error(e.message);
+      return false;
+    }
+  });
+
+  ipcMain.handle('get-installed-mods', async (_, id) => {
+    try {
+      const serverDir = join(app.getPath('userData'), 'servers', id.toString());
+      const modsDir = join(serverDir, 'mods');
+      if (!fs.existsSync(modsDir)) return [];
+      
+      const files = fs.readdirSync(modsDir);
+      return files.filter(f => f.endsWith('.jar')).map(f => {
+        const stats = fs.statSync(join(modsDir, f));
+        return { name: f, size: stats.size };
+      });
+    } catch (e: any) {
+      console.error(e.message);
+      return [];
+    }
+  });
+
+  ipcMain.handle('delete-mod', async (_, id, fileName) => {
+    try {
+      const serverDir = join(app.getPath('userData'), 'servers', id.toString());
+      const filePath = join(serverDir, 'mods', fileName);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+        return true;
+      }
+      return false;
+    } catch (e: any) {
+      console.error(e.message);
+      return false;
+    }
+  });
+
   ipcMain.handle('install-curseforge-modpack', async (event, id, modId, version) => {
     const serverDir = join(app.getPath('userData'), 'servers', id.toString());
     
@@ -234,23 +342,16 @@ app.whenReady().then(() => {
       event.sender.send(`download-progress-${id}`, 0, `Downloading ${isServerPack ? 'Server Pack' : 'Client Pack'}...`);
 
       const zipPath = join(serverDir, 'modpack.zip');
-      const response = await axios({ method: 'GET', url: targetFile.downloadUrl, responseType: 'stream' });
-      const totalLength = response.headers['content-length'] as string;
-      let downloaded = 0;
-      
-      const writer = fs.createWriteStream(zipPath);
-      response.data.on('data', (chunk: Buffer) => {
-        downloaded += chunk.length;
-        if (totalLength) {
-          const progress = Math.round((downloaded / parseInt(totalLength)) * 100);
-          event.sender.send(`download-progress-${id}`, progress, `Downloading ${isServerPack ? 'Server Pack' : 'Client Pack'}...`);
+      const cachedFile = await CacheManager.getOrDownload(
+        'modpacks', 
+        targetFile.downloadUrl, 
+        targetFile.fileName, 
+        (progress, text) => {
+          event.sender.send(`download-progress-${id}`, progress, isServerPack ? (text === 'Downloading...' ? 'Downloading Server Pack...' : text) : (text === 'Downloading...' ? 'Downloading Client Pack...' : text));
         }
-      });
-      response.data.pipe(writer);
-      await new Promise((resolve, reject) => {
-        writer.on('finish', () => resolve(true));
-        writer.on('error', reject);
-      });
+      );
+      
+      fs.copyFileSync(cachedFile, zipPath);
       
       event.sender.send(`download-progress-${id}`, 100, 'Extracting pack...');
       
@@ -319,11 +420,9 @@ app.whenReady().then(() => {
              }
              if (dUrl) {
                 const nameParts = dUrl.split('/');
-                const fileName = nameParts[nameParts.length - 1];
-                const w = fs.createWriteStream(join(modsDir, decodeURIComponent(fileName)));
-                const dRes = await axios({ method: 'GET', url: dUrl, responseType: 'stream' });
-                dRes.data.pipe(w);
-                await new Promise(r => w.on('finish', () => r(true)));
+                const fileName = decodeURIComponent(nameParts[nameParts.length - 1]);
+                const cachedOverride = await CacheManager.getOrDownload('mods', dUrl, fileName);
+                fs.copyFileSync(cachedOverride, join(modsDir, fileName));
              }
            } catch(e) { console.error('Failed to download mod', mod.projectID); }
          }
@@ -407,33 +506,18 @@ app.whenReady().then(() => {
 
       if (!downloadUrl) throw new Error('Could not resolve download URL');
 
-      event.sender.send(`download-progress-${id}`, 0, 'Downloading...');
-
-      const response = await axios({
-        method: 'GET',
-        url: downloadUrl,
-        responseType: 'stream'
-      });
-
-      const totalLength = response.headers['content-length'] as string;
-      let downloaded = 0;
-
       const targetPath = isInstaller ? installerPath : jarPath;
-      const writer = fs.createWriteStream(targetPath);
-      response.data.on('data', (chunk: Buffer) => {
-        downloaded += chunk.length;
-        if (totalLength) {
-          const progress = Math.round((downloaded / parseInt(totalLength)) * 100);
-          event.sender.send(`download-progress-${id}`, progress, isInstaller ? 'Downloading Installer...' : 'Downloading Jar...');
+      const fileName = `${type}-${version}${isInstaller ? '-installer' : ''}.jar`;
+      const cachedFile = await CacheManager.getOrDownload(
+        'jars', 
+        downloadUrl, 
+        fileName, 
+        (progress, text) => {
+          event.sender.send(`download-progress-${id}`, progress, isInstaller ? (text === 'Downloading...' ? 'Downloading Installer...' : text) : (text === 'Downloading...' ? 'Downloading Jar...' : text));
         }
-      });
-
-      response.data.pipe(writer);
-
-      await new Promise((resolve, reject) => {
-        writer.on('finish', () => resolve(true));
-        writer.on('error', reject);
-      });
+      );
+      
+      fs.copyFileSync(cachedFile, targetPath);
 
       if (isInstaller) {
         event.sender.send(`download-progress-${id}`, 100, 'Installing Modloader...');
@@ -538,6 +622,15 @@ app.whenReady().then(() => {
       return await activeServers[id].getPlayerInventory(playerName);
     }
     return null;
+  });
+
+  ipcMain.handle('get-cache-info', () => {
+    return CacheManager.getCacheSize();
+  });
+
+  ipcMain.handle('clear-cache', () => {
+    CacheManager.clearCache();
+    return true;
   });
 
   createWindow()

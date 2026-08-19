@@ -3,7 +3,7 @@ import path from 'path';
 import fs from 'fs';
 import axios from 'axios';
 import AdmZip from 'adm-zip';
-import { pipeline } from 'stream/promises';
+import { CacheManager } from '../CacheManager';
 
 export class JavaManager {
   private static get javaDir() {
@@ -63,33 +63,11 @@ export class JavaManager {
     }
 
     const downloadUrl = response.data[0].binary.package.link;
-    const size = response.data[0].binary.package.size;
 
     // 2. Download the zip
-    if (!fs.existsSync(this.javaDir)) {
-      fs.mkdirSync(this.javaDir, { recursive: true });
-    }
-
-    const zipPath = path.join(this.javaDir, `java-${version}.zip`);
-    const writer = fs.createWriteStream(zipPath);
-
-    console.log(`[JavaManager] Starting download from ${downloadUrl}`);
-    const downloadResponse = await axios({
-      method: 'GET',
-      url: downloadUrl,
-      responseType: 'stream'
+    const zipPath = await CacheManager.getOrDownload('java', downloadUrl, `java-${version}.zip`, (progress) => {
+      if (onProgress) onProgress(progress);
     });
-
-    let downloadedBytes = 0;
-    downloadResponse.data.on('data', (chunk: Buffer) => {
-      downloadedBytes += chunk.length;
-      if (onProgress && size) {
-        const percent = Math.round((downloadedBytes / size) * 100);
-        onProgress(percent);
-      }
-    });
-
-    await pipeline(downloadResponse.data, writer);
 
     // 3. Extract the zip
     console.log(`[JavaManager] Extracting Java ${version}...`);
@@ -99,8 +77,6 @@ export class JavaManager {
     const zip = new AdmZip(zipPath);
     zip.extractAllTo(targetDir, true);
 
-    // 4. Cleanup zip
-    fs.unlinkSync(zipPath);
     console.log(`[JavaManager] Java ${version} installed successfully.`);
   }
 }

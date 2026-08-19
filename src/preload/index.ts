@@ -38,7 +38,20 @@ const api = {
   onDownloadProgress: (id: number, callback: (progress: number, text?: string) => void) => {
     ipcRenderer.removeAllListeners(`download-progress-${id}`)
     ipcRenderer.on(`download-progress-${id}`, (_, progress, text) => callback(progress, text))
-  }
+  },
+  
+  // Mod Browser
+  getServerMeta: (id: number) => ipcRenderer.invoke('get-server-meta', id),
+  getCurseforgeMod: (modId: number) => ipcRenderer.invoke('get-curseforge-mod', modId),
+  getCurseforgeFile: (modId: number, fileId: number) => ipcRenderer.invoke('get-curseforge-file', modId, fileId),
+  searchCurseforgeMods: (search: string, type: string, version: string, page?: number, classId?: number, sortField?: number) => ipcRenderer.invoke('search-curseforge-mods', search, type, version, page, classId, sortField),
+  installCurseforgeMod: (id: number, downloadUrl: string, fileName: string, classId?: number) => ipcRenderer.invoke('install-curseforge-mod', id, downloadUrl, fileName, classId),
+  getInstalledMods: (id: number) => ipcRenderer.invoke('get-installed-mods', id),
+  deleteMod: (id: number, fileName: string) => ipcRenderer.invoke('delete-mod', id, fileName),
+  
+  // Cache
+  getCacheInfo: () => ipcRenderer.invoke('get-cache-info'),
+  clearCache: () => ipcRenderer.invoke('clear-cache')
 }
 
 
