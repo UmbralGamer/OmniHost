@@ -182,9 +182,26 @@ export class MinecraftAdapter {
     if (this.process) {
       this.sendLog(`[System] Stopping Server ${this.serverId}...`);
       this.process.stdin?.write('stop\n');
+      
+      const p = this.process;
       this.process = null;
       this.onlinePlayers = []; 
       this.sendPlayerUpdate();
+
+      // Force kill after 15 seconds if it hasn't gracefully exited
+      setTimeout(() => {
+        try {
+          if (p.pid) {
+            // Check if process is still alive
+            process.kill(p.pid, 0);
+            this.sendLog(`[System] Server took too long to stop. Force killing process tree...`);
+            const { exec } = require('child_process');
+            exec(`taskkill /pid ${p.pid} /T /F`, () => {});
+          }
+        } catch (e) {
+          // Process already dead
+        }
+      }, 15000);
     }
   }
 }

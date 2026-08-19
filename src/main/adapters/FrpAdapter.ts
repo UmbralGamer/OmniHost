@@ -53,7 +53,7 @@ export class FrpAdapter {
     // 2. Build the FRP Configuration
     // NOTE: We will change this IP once you get your free cloud server!
     const tomlConfig = `
-serverAddr = "34.131.92.119"
+serverAddr = "34.131.235.17"
 serverPort = 7000
 
 [[proxies]]

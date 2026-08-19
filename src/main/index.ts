@@ -101,6 +101,20 @@ app.whenReady().then(() => {
       fs.renameSync(modsDir, join(serverDir, `mods_old_${timestamp}`));
     }
 
+    // Cleanup old startup scripts and modloader jars to prevent booting the wrong software
+    const cleanupFiles = ['run.bat', 'start.bat', 'run.sh', 'start.sh', 'user_jvm_args.txt'];
+    for (const file of cleanupFiles) {
+      const p = join(serverDir, file);
+      if (fs.existsSync(p)) fs.rmSync(p);
+    }
+    
+    const allFiles = fs.readdirSync(serverDir);
+    for (const file of allFiles) {
+      if ((file.startsWith('forge-') || file.startsWith('neoforge-')) && file.endsWith('.jar')) {
+        fs.rmSync(join(serverDir, file));
+      }
+    }
+
     // Update omnihost.json
     fs.writeFileSync(join(serverDir, 'omnihost.json'), JSON.stringify({ type, version }));
     
