@@ -28,7 +28,9 @@ async function exists(path: string) {
   }
 }
 
-const CURSEFORGE_API_KEY = '$2a$10$WLjUD.aJlcjuSSdEOByujetqwwhUeTTfS2AsFhIOq31vLq./E1nRO';
+import * as dotenv from 'dotenv';
+dotenv.config();
+const CURSEFORGE_API_KEY = process.env.CURSEFORGE_API_KEY || '';
 
 // Fix Windows UI freeze/hang issues with Framer Motion without disabling hardware acceleration entirely
 app.commandLine.appendSwitch('disable-features', 'CalculateNativeWinOcclusion');
@@ -49,6 +51,13 @@ function createWindow(): void {
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
   })
+
+  // Disable DevTools in production
+  if (app.isPackaged) {
+    mainWindow.webContents.on('devtools-opened', () => {
+      mainWindow.webContents.closeDevTools();
+    });
+  }
 
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
