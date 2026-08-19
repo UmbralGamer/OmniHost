@@ -40,3 +40,8 @@ export function deleteServer(id: number) {
   const stmt = db.prepare('DELETE FROM servers WHERE id = ?')
   stmt.run(id)
 }
+
+export function updateServerSoftware(id: number, type: string) {
+  const stmt = db.prepare('UPDATE servers SET game = ? WHERE id = ?')
+  stmt.run(`Minecraft (${type})`, id)
+}

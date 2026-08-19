@@ -25,6 +25,7 @@ const api = {
   
   // Versions & Downloads
   createServer: (name: string, type: string, version: string) => ipcRenderer.invoke('create-server', name, type, version),
+  changeServerSoftware: (id: number, type: string, version: string) => ipcRenderer.invoke('change-server-software', id, type, version),
   deleteServer: (id: number) => ipcRenderer.invoke('delete-server', id),
   getVanillaVersions: () => ipcRenderer.invoke('get-vanilla-versions'),
   getPaperVersions: () => ipcRenderer.invoke('get-paper-versions'),

@@ -71,6 +71,12 @@ function App() {
   // Cache State
   const [cacheSize, setCacheSize] = useState<number>(0)
 
+  // Software Switching States
+  const [editingSoftwareType, setEditingSoftwareType] = useState('Vanilla')
+  const [editingSoftwareVersion, setEditingSoftwareVersion] = useState('')
+  const [editingAvailableVersions, setEditingAvailableVersions] = useState<string[]>([])
+  const [isChangingSoftware, setIsChangingSoftware] = useState(false)
+
   const endOfLogsRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -130,6 +136,37 @@ function App() {
       }
     }
   }, [showCreateModal, newServerType])
+
+  useEffect(() => {
+    if (activeTab === 'software' && serverMeta) {
+       setEditingSoftwareType(serverMeta.type || 'Vanilla');
+       setEditingSoftwareVersion(serverMeta.version || '');
+    }
+  }, [activeTab, serverMeta])
+
+  useEffect(() => {
+    if (activeTab === 'software') {
+      const fetchVersions = async () => {
+        let versions: string[] = []
+        // @ts-ignore
+        if (editingSoftwareType === 'Vanilla') versions = await window.api.getVanillaVersions();
+        // @ts-ignore
+        else if (editingSoftwareType === 'Paper') versions = await window.api.getPaperVersions();
+        // @ts-ignore
+        else if (editingSoftwareType === 'Fabric') versions = await window.api.getFabricVersions();
+        // @ts-ignore
+        else if (editingSoftwareType === 'Forge') versions = await window.api.getForgeVersions();
+        // @ts-ignore
+        else if (editingSoftwareType === 'NeoForge') versions = await window.api.getNeoForgeVersions();
+        
+        setEditingAvailableVersions(versions);
+        if (versions.length > 0) {
+           setEditingSoftwareVersion(prev => versions.includes(prev) ? prev : versions[0]);
+        }
+      }
+      fetchVersions()
+    }
+  }, [activeTab, editingSoftwareType])
 
   useEffect(() => {
     let delay: NodeJS.Timeout;
@@ -197,7 +234,7 @@ function App() {
   };
 
   useEffect(() => {
-    if (activeServerId !== null && activeTab === 'mods') {
+    if (activeServerId !== null && (activeTab === 'mods' || activeTab === 'software')) {
       fetchMods();
     }
   }, [activeServerId, activeTab, modViewType]);
@@ -1155,12 +1192,101 @@ function App() {
 
               {/* TAB: SOFTWARE */}
               {activeTab === 'software' && (
-                <div className="h-full flex flex-col items-center justify-center text-gray-500 p-8">
-                  <div className="w-24 h-24 mb-6 opacity-20">
-                    <svg fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>
-                  </div>
-                  <h3 className="text-2xl font-bold text-gray-400 mb-2">Software & Modpacks</h3>
-                  <p className="text-center max-w-md">This feature is being built in the next stage.</p>
+                <div className="h-full flex flex-col p-8">
+                  <h3 className="text-2xl font-bold text-[#FFD700] mb-6">Change Software</h3>
+                  
+                  {isChangingSoftware ? (
+                    <div className="flex-1 flex flex-col items-center justify-center">
+                      <div className="w-16 h-16 border-4 border-[#FFD700] border-t-transparent rounded-full animate-spin mb-4"></div>
+                      <h4 className="text-xl font-bold text-white mb-2">Changing Software</h4>
+                      <p className="text-gray-400">{downloadText}</p>
+                      {downloadProgress > 0 && (
+                        <div className="w-full max-w-md bg-gray-800 rounded-full h-2 mt-4 overflow-hidden">
+                          <div className="bg-[#FFD700] h-2 transition-all duration-300" style={{ width: `${downloadProgress}%` }}></div>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-6 max-w-xl">
+                      <div>
+                        <label className="block text-sm font-bold text-gray-400 mb-2">Software Type</label>
+                        <select 
+                          value={editingSoftwareType}
+                          onChange={e => setEditingSoftwareType(e.target.value)}
+                          className="w-full bg-[#050505] border border-gray-800 rounded p-3 text-white outline-none focus:border-[#FFD700] shadow-inner"
+                        >
+                          <option>Vanilla</option>
+                          <option>Paper</option>
+                          <option>Fabric</option>
+                          <option>Forge</option>
+                          <option>NeoForge</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-bold text-gray-400 mb-2">Minecraft Version</label>
+                        <select 
+                          value={editingSoftwareVersion}
+                          onChange={e => setEditingSoftwareVersion(e.target.value)}
+                          className="w-full bg-[#050505] border border-gray-800 rounded p-3 text-white outline-none focus:border-[#FFD700] shadow-inner"
+                        >
+                          {editingAvailableVersions.map(v => <option key={v} value={v}>{v}</option>)}
+                        </select>
+                      </div>
+
+                      <div className="bg-yellow-900/20 border border-yellow-700/50 rounded-lg p-4 mt-4">
+                        <p className="text-sm text-yellow-500 font-bold mb-1">Warning: Mod Compatibility</p>
+                        <p className="text-xs text-yellow-600">Changing software versions or types may cause compatibility issues with installed mods. Old mods will be moved to a backup folder.</p>
+                      </div>
+
+                      <button 
+                        onClick={async () => {
+                          if (!activeServerId) return;
+                          setIsChangingSoftware(true);
+                          setDownloadProgress(0);
+                          setDownloadText('Preparing...');
+                          
+                          try {
+                            // @ts-ignore
+                            window.api.onDownloadProgress(activeServerId, (progress: number, text?: string) => {
+                               setDownloadProgress(progress);
+                               if (text) setDownloadText(text);
+                            });
+
+                            // @ts-ignore
+                            await window.api.changeServerSoftware(activeServerId, editingSoftwareType, editingSoftwareVersion);
+                            
+                            // Re-download the jar
+                            // @ts-ignore
+                            await window.api.downloadServerJar(activeServerId, editingSoftwareType, editingSoftwareVersion);
+                            
+                            // Show success
+                            setDownloadText('Software updated successfully!');
+                            setDownloadProgress(100);
+                            
+                            // Let the UI catch up
+                            setTimeout(() => {
+                              setIsChangingSoftware(false);
+                              // Refetch meta to update view
+                              fetchMods();
+                              // Update the servers list globally
+                              // @ts-ignore
+                              window.api.getServers().then(setServers);
+                            }, 1500);
+
+                          } catch (err: any) {
+                            console.error(err);
+                            setDownloadText('Error: ' + err.message);
+                            setTimeout(() => setIsChangingSoftware(false), 3000);
+                          }
+                        }}
+                        disabled={!editingSoftwareVersion}
+                        className="mt-4 bg-gradient-to-br from-[#FFD700] to-[#D4AF37] text-black font-black py-3 px-6 rounded hover:scale-[1.02] active:scale-95 transition-transform disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed"
+                      >
+                        Apply Changes
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
 

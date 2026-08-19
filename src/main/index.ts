@@ -7,7 +7,7 @@ import axios from 'axios'
 import semver from 'semver'
 
 // Import our custom modules
-import { getServers, createServer, deleteServer } from './db'
+import { getServers, createServer, deleteServer, updateServerSoftware } from './db'
 import { MinecraftAdapter } from './adapters/MinecraftAdapter'
 import { FrpAdapter } from './adapters/FrpAdapter'
 import { JavaManager } from './adapters/JavaManager'
@@ -79,6 +79,25 @@ app.whenReady().then(() => {
     if (!fs.existsSync(serverDir)) fs.mkdirSync(serverDir, { recursive: true });
     fs.writeFileSync(join(serverDir, 'omnihost.json'), JSON.stringify({ type, version }));
     return id;
+  })
+
+  ipcMain.handle('change-server-software', async (_, id, type, version) => {
+    const serverDir = join(app.getPath('userData'), 'servers', id.toString());
+    const modsDir = join(serverDir, 'mods');
+    
+    // Rename old mods folder to prevent compatibility issues
+    if (fs.existsSync(modsDir)) {
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      fs.renameSync(modsDir, join(serverDir, `mods_old_${timestamp}`));
+    }
+
+    // Update omnihost.json
+    fs.writeFileSync(join(serverDir, 'omnihost.json'), JSON.stringify({ type, version }));
+    
+    // Update DB
+    updateServerSoftware(id, type);
+
+    return true;
   })
 
   // Versions & Downloads
