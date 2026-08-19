@@ -4,6 +4,7 @@ import { ListViewIcon } from './components/unlumen-ui/list-view-icon'
 import { ConsoleTab } from './components/tabs/ConsoleTab';
 import { OptionsTab } from './components/tabs/OptionsTab';
 import { PlayersTab } from './components/tabs/PlayersTab';
+import { FilesTab } from './components/tabs/FilesTab';
 
 const classOptions = [
   { id: 6, name: 'Mods' },
@@ -22,7 +23,7 @@ function App() {
   const [tunnelStatus, setTunnelStatus] = useState('Offline')
 
   const [activeServerId, setActiveServerId] = useState<number | null>(null)
-  const [activeTab, setActiveTab] = useState<'console' | 'options' | 'players' | 'software' | 'mods'>('console')
+  const [activeTab, setActiveTab] = useState<'console' | 'options' | 'players' | 'software' | 'mods' | 'files'>('console')
   const [onlinePlayers, setOnlinePlayers] = useState<string[]>([])
 
 
@@ -600,7 +601,7 @@ function App() {
                 ),
                 answer: (
                   <div className="flex flex-col gap-1">
-                    {[{ id: 'console', label: 'Console' }, { id: 'options', label: 'Options' }, { id: 'players', label: 'Players' }, { id: 'mods', label: 'Mods' }, { id: 'software', label: 'Software' }].map(tab => (
+                    {[{ id: 'console', label: 'Console' }, { id: 'options', label: 'Options' }, { id: 'players', label: 'Players' }, { id: 'mods', label: 'Mods' }, { id: 'software', label: 'Software' }, { id: 'files', label: 'Files' }].map(tab => (
                       <div key={tab.id} onClick={() => { setActiveTab(tab.id as any); setSelectedPlayer(null); }} className={`px-4 py-2 cursor-pointer rounded-lg text-sm font-semibold transition-all whitespace-nowrap ${activeTab === tab.id ? 'text-brand bg-brand/10' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>{tab.label}</div>
                     ))}
                   </div>
@@ -728,6 +729,7 @@ function App() {
 
               {activeTab === 'options' && (
                 <OptionsTab 
+                  serverId={activeServerId as number}
                   advancedMode={advancedMode}
                   setAdvancedMode={setAdvancedMode}
                   handleSaveConfig={handleSaveConfig}
@@ -754,6 +756,9 @@ function App() {
                   playerInventory={playerInventory}
                   sendPlayerCommand={sendPlayerCommand}
                 />
+              )}
+              {activeTab === 'files' && (
+                <FilesTab serverId={activeServerId} />
               )}
 
               {/* TAB: MODS */}
