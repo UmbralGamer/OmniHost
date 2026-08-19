@@ -171,7 +171,10 @@ app.whenReady().then(() => {
     try {
       let url = `https://api.curseforge.com/v1/mods/search?gameId=432&classId=4471&sortField=2&sortOrder=desc`;
       if (query) url += `&searchFilter=${encodeURIComponent(query)}`;
-      if (version) url += `&gameVersion=${encodeURIComponent(version)}`;
+      if (version) {
+        const cfVersion = version.endsWith('.0') && version.split('.').length === 3 ? version.slice(0, -2) : version;
+        url += `&gameVersion=${encodeURIComponent(cfVersion)}`;
+      }
       if (modloader) {
         if (modloader === 'Forge') url += '&modLoaderType=1';
         else if (modloader === 'Fabric') url += '&modLoaderType=4';
@@ -215,7 +218,14 @@ app.whenReady().then(() => {
       else if (type === 'NeoForge') modLoaderType = 6;
       
       const index = page * 20;
-      let url = `https://api.curseforge.com/v1/mods/search?gameId=432&classId=${classId}&sortField=${sortField}&sortOrder=desc&gameVersion=${version}&modLoaderType=${modLoaderType}&index=${index}&pageSize=20`;
+      const cfVersion = version.endsWith('.0') && version.split('.').length === 3 ? version.slice(0, -2) : version;
+      let url = `https://api.curseforge.com/v1/mods/search?gameId=432&classId=${classId}&sortField=${sortField}&sortOrder=desc&gameVersion=${cfVersion}&index=${index}&pageSize=20`;
+      
+      // Only apply modLoaderType for the "Mods" class (id 6)
+      if (classId === 6 && modLoaderType !== 0) {
+        url += `&modLoaderType=${modLoaderType}`;
+      }
+      
       if (search) url += `&searchFilter=${encodeURIComponent(search)}`;
       
       const res = await axios.get(url, { headers: { 'x-api-key': CURSEFORGE_API_KEY } });
