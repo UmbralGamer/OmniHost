@@ -1,68 +1,68 @@
-# Graph Report - D:\\github\\OmniHost  (2026-08-26)
+# Graph Report - D:\\github\\OmniHost  (2026-08-27)
 
 ## Corpus Check
-- 109 files · ~71,041 words
+- 110 files · ~71,705 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 410 nodes · 666 edges · 94 communities detected
+- 419 nodes · 664 edges · 106 communities detected
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS
 - Token cost: 0 input · 0 output
 
 ## Structure Signals
-- Entity graph basis: 307 non-file, non-concept node(s)
-- Weakly connected components: 80
+- Entity graph basis: 315 non-file, non-concept node(s)
+- Weakly connected components: 83
 - Singleton components: 41
 - Isolated nodes: 41
-- Largest component: 57 node(s) (19% of the entity graph basis)
+- Largest component: 43 node(s) (14% of the entity graph basis)
 - Low-cohesion communities: 1
 - Largest low-cohesion community: 14 node(s) (cohesion 0.14)
 
 ## Workspace Bridges
 1. `useDayzWorkshop\(\)` - connects `Renderer Dayz Hub Context`, `Renderer Use Dayz Workshop — Handle`, `Renderer Use Dayz Workshop — Handle \(2\)`; home: `Renderer Use Dayz Workshop`; degree 12; score 2034.25
   source files: `D:/github/OmniHost/src/renderer/src/components/hubs/DayzHub/tabs/DayzInstalledModsTab.tsx`, `D:/github/OmniHost/src/renderer/src/hooks/useDayzWorkshop.ts`
-2. `MinecraftProcessManager` - connects `Main Minecraft Process Manager — Bat`, `Main Minecraft Process Manager — Send`; home: `Main Minecraft Process Manager`; degree 9; score 1668
+2. `MinecraftModManager` - connects `Main Minecraft Mod Manager — Curseforge`, `Main Minecraft Mod Manager — Search`; home: `Main Minecraft Mod Manager`; degree 9; score 1737
+  source files: `D:/github/OmniHost/src/main/minecraft/MinecraftModManager.ts`
+3. `MinecraftProcessManager` - connects `Main Minecraft Process Manager — Bat`, `Main Minecraft Process Manager — Send`; home: `Main Minecraft Process Manager`; degree 9; score 1731
   source files: `D:/github/OmniHost/src/main/minecraft/MinecraftProcessManager.ts`
-3. `useDayzMods\(\)` - connects `Renderer Dayz Hub Context`, `Renderer Use Dayz Mods — Handle`; home: `Renderer Use Dayz Mods`; degree 9; score 1492.25
-  source files: `D:/github/OmniHost/src/renderer/src/components/hubs/DayzHub/tabs/DayzModsTab.tsx`, `D:/github/OmniHost/src/renderer/src/hooks/useDayzMods.ts`
-4. `DayzLogParser` - connects `Main Dayz Log Parser — File`, `Main Dayz Log Parser — Log`; home: `Main Dayz Log Parser`; degree 7; score 1486.67
+4. `DayzLogParser` - connects `Main Dayz Log Parser — File`, `Main Dayz Log Parser — Log`; home: `Main Dayz Log Parser`; degree 7; score 1542.67
   source files: `D:/github/OmniHost/src/main/adapters/DayzLogParser.ts`
-5. `useDayzFiles\(\)` - connects `Renderer Dayz Hub Context`, `Renderer Use Dayz Files — Handle`; home: `Renderer Use Dayz Files`; degree 8; score 1316.5
+5. `useDayzMods\(\)` - connects `Renderer Dayz Hub Context`, `Renderer Use Dayz Mods — Handle`; home: `Renderer Use Dayz Mods`; degree 9; score 1492.25
+  source files: `D:/github/OmniHost/src/renderer/src/components/hubs/DayzHub/tabs/DayzModsTab.tsx`, `D:/github/OmniHost/src/renderer/src/hooks/useDayzMods.ts`
+6. `useDayzFiles\(\)` - connects `Renderer Dayz Hub Context`, `Renderer Use Dayz Files — Handle`; home: `Renderer Use Dayz Files`; degree 8; score 1316.5
   source files: `D:/github/OmniHost/src/renderer/src/components/hubs/DayzHub/tabs/DayzFilesTab.tsx`, `D:/github/OmniHost/src/renderer/src/hooks/useDayzFiles.ts`
-6. `useDayzOptions\(\)` - connects `Renderer Use Dayz Options`, `Renderer Use Dayz Options — Replace`; home: `Renderer Dayz Options Tab`; degree 4; score 1303.75
-  source files: `D:/github/OmniHost/src/renderer/src/components/hubs/DayzHub/tabs/DayzOptionsTab.tsx`, `D:/github/OmniHost/src/renderer/src/hooks/useDayzOptions.ts`
 
 ## God Nodes
 1. `SteamCMDManager` - 15 edges
 2. `useDayzWorkshop\(\)` - 14 edges
 3. `MinecraftProcessManager` - 12 edges
-4. `MinecraftDownloader` - 11 edges
-5. `useDayzMods\(\)` - 11 edges
-6. `CacheManager` - 10 edges
+4. `CacheManager` - 11 edges
+5. `MinecraftModManager` - 11 edges
+6. `useDayzMods\(\)` - 11 edges
 7. `useDayzFiles\(\)` - 10 edges
-8. `DayzHubContent\(\)` - 9 edges
-9. `DayzLogParser` - 9 edges
-10. `RadminVpnAdapter` - 9 edges
+8. `DayzLogParser` - 9 edges
+9. `MinecraftDownloader` - 9 edges
+10. `SteamCache` - 9 edges
 
 ## Surprising Connections
+- `registerSystemIpc\(\)` --calls--> `getServers\(\)`  [EXTRACTED]
+  D:/github/OmniHost/src/main/ipc/SystemIpc.ts → D:/github/OmniHost/src/main/db.ts  _bridges separate communities; peripheral node \`registerSystemIpc\(\)\` unexpectedly reaches hub \`getServers\(\)\`_
 - `DayzHubContent\(\)` --renders--> `DayzOptionsTab\(\)`  [EXTRACTED]
   D:/github/OmniHost/src/renderer/src/components/hubs/DayzHub/DayzHub.tsx → D:/github/OmniHost/src/renderer/src/components/hubs/DayzHub/tabs/DayzOptionsTab.tsx  _bridges separate communities_
 - `MinecraftHub\(\)` --renders--> `BackupsTab\(\)`  [EXTRACTED]
   D:/github/OmniHost/src/renderer/src/components/hubs/MinecraftHub/MinecraftHub.tsx → D:/github/OmniHost/src/renderer/src/components/tabs/BackupsTab.tsx  _bridges separate communities_
-- `registerSystemIpc\(\)` --calls--> `getServers\(\)`  [EXTRACTED]
-  D:/github/OmniHost/src/main/ipc/SystemIpc.ts → D:/github/OmniHost/src/main/db.ts  _bridges separate communities_
-- `DayzEconomyTab\(\)` --calls--> `useDayzEconomy\(\)`  [EXTRACTED]
-  D:/github/OmniHost/src/renderer/src/components/hubs/DayzHub/tabs/DayzEconomyTab.tsx → D:/github/OmniHost/src/renderer/src/hooks/useDayzEconomy.ts  _bridges separate communities_
 - `DayzFilesTab\(\)` --calls--> `useDayzFiles\(\)`  [EXTRACTED]
   D:/github/OmniHost/src/renderer/src/components/hubs/DayzHub/tabs/DayzFilesTab.tsx → D:/github/OmniHost/src/renderer/src/hooks/useDayzFiles.ts  _bridges separate communities_
+- `DayzInstalledModsTab\(\)` --calls--> `useDayzWorkshop\(\)`  [EXTRACTED]
+  D:/github/OmniHost/src/renderer/src/components/hubs/DayzHub/tabs/DayzInstalledModsTab.tsx → D:/github/OmniHost/src/renderer/src/hooks/useDayzWorkshop.ts  _bridges separate communities_
 
 ## Semantic Anomalies
 - **[HIGH] Bridge node** - MinecraftProcessManager bridges Main Minecraft Process Manager and Main Minecraft Config Manager, Main Minecraft Process Manager — Send, Main Minecraft Process Manager — Bat, Main Wake Proxy, Main Db.
-  _High betweenness centrality \(1639.000\) across 6 communities makes this node a likely dependency chokepoint._
+  _High betweenness centrality \(1702.000\) across 6 communities makes this node a likely dependency chokepoint._
 - **[HIGH] Bridge node** - useDayzWorkshop\(\) bridges Renderer Use Dayz Workshop and Renderer Use Dayz Workshop — Handle, Renderer Use Dayz Workshop — Handle \(2\), Renderer Dayz Hub Context.
   _High betweenness centrality \(1992.250\) across 4 communities makes this node a likely dependency chokepoint._
-- **[HIGH] Bridge node** - MinecraftDownloader bridges Main Minecraft Downloader and Main Cache Manager — TypeScript, Main Minecraft Downloader — Download, Main Minecraft Ipc.
-  _High betweenness centrality \(1591.233\) across 4 communities makes this node a likely dependency chokepoint._
+- **[HIGH] Bridge node** - MinecraftModManager bridges Main Minecraft Mod Manager and Main Minecraft Ipc, Main Minecraft Mod Manager — Search, Main Minecraft Mod Manager — Curseforge.
+  _High betweenness centrality \(1708.000\) across 4 communities makes this node a likely dependency chokepoint._
 - **[HIGH] Cross-boundary edge** - App\(\) → GameBackgrounds\(\) crosses graph boundaries in an unexpected way.
   _bridges separate communities_
 - **[HIGH] Cross-boundary edge** - App\(\) → TopNavbar\(\) crosses graph boundaries in an unexpected way.
@@ -70,89 +70,89 @@
 
 ## Communities
 
-### Community 0 - "Renderer Delete Confirmation Modal"
-Cohesion (entity basis within full-graph community): 0.02
-Nodes (15): BackupsTabProps, ConsoleTabProps, DeleteConfirmationModal\(\), confirmDeleteServer\(\), ModsTabProps, OverviewTabProps, SteamLoginModal\(\), handleUpdateSteamCache\(\) (+7 more)
-
-### Community 1 - "Renderer Dayz Hub Context"
-Cohesion (entity basis within full-graph community): 0.14
-Nodes (13): DayzEconomyTab\(\), renderSlider\(\), DayzFilesTab\(\), DayzHub\(\), DayzHubContent\(\), DayzHubContextType, DayzHubProvider\(\), handleTabChange\(\) (+5 more)
-
-### Community 2 - "Main Steam Workshop Downloader"
+### Community 0 - "Main Steam Workshop Downloader"
 Cohesion (entity basis within full-graph community): 0.05
 Nodes (7): DayzMissionManager, SteamCache, registerSteamCMDIpc\(\), SteamCMDSetup, SteamDownloader, SteamWorkshopDownloader, .sendInput\(\)
+
+### Community 1 - "Renderer Dayz Hub Context"
+Cohesion (entity basis within full-graph community): 0.16
+Nodes (11): DayzFilesTab\(\), DayzHub\(\), DayzHubContent\(\), DayzHubContextType, DayzHubProvider\(\), handleTabChange\(\), useDayzHubContext\(\), DayzInstalledModsTab\(\) (+3 more)
+
+### Community 2 - "Renderer Delete Confirmation Modal"
+Cohesion (entity basis within full-graph community): 0.07
+Nodes (8): DeleteConfirmationModal\(\), confirmDeleteServer\(\), SteamLoginModal\(\), handleUpdateSteamCache\(\), TunnelModal\(\), ModalStore, Toast, ToastStore
 
 ### Community 3 - "Main Steam Cmd Manager"
 Cohesion (entity basis within full-graph community): 0.14
 Nodes (14): SteamCMDManager, .copyFromCache\(\), .deleteCache\(\), .downloadWorkshopItem\(\), .downloadWorkshopItems\(\), .ensureInstalled\(\), .getCacheDir\(\), .getExePath\(\) (+6 more)
 
-### Community 4 - "Main Db"
+### Community 4 - "Renderer Top Navbar"
+Cohesion (entity basis within full-graph community): 0.2
+Nodes (6): GameBackgrounds\(\), formatBytes\(\), getGameThemeColor\(\), TopNavbar\(\), handleClearCache\(\), UiStore
+
+### Community 5 - "Main Db"
 Cohesion (entity basis within full-graph community): 0.24
 Nodes (7): createServer\(\), deleteServer\(\), getServers\(\), updateServerSoftware\(\), exists\(\), registerServerIpc\(\), getServerPath\(\)
 
-### Community 5 - "Main Minecraft Downloader"
-Cohesion (entity basis within full-graph community): 0.22
-Nodes (9): MinecraftDownloader, .getFabricVersions\(\), .getForgeVersions\(\), .getLoaderVersions\(\), .getModpackDetails\(\), .getNeoForgeVersions\(\), .getPaperVersions\(\), .getVanillaVersions\(\) (+1 more)
-
-### Community 6 - "Renderer Top Navbar"
-Cohesion (entity basis within full-graph community): 0.3
-Nodes (5): GameBackgrounds\(\), formatBytes\(\), getGameThemeColor\(\), TopNavbar\(\), handleClearCache\(\)
-
-### Community 7 - "Main Cache Manager"
+### Community 6 - "Main Cache Manager"
 Cohesion (entity basis within full-graph community): 0.43
 Nodes (8): CacheManager, .clearCache\(\), .getCacheDir\(\), .getCacheSize\(\), calculateSize\(\), .getCategoryDir\(\), .getOrDownload\(\), .getSafeFilename\(\)
 
-### Community 8 - "Renderer Hub Router"
+### Community 7 - "Renderer Hub Router"
 Cohesion (entity basis within full-graph community): 0
 Nodes (2): getGameImageUrl\(\), isGameSupported\(\)
 
-### Community 9 - "Renderer Use Dayz Workshop"
+### Community 8 - "Renderer Use Dayz Workshop"
 Cohesion (entity basis within full-graph community): 0.4
 Nodes (5): useDayzWorkshop\(\), handleCheckDependencies\(\), handleDownloadMission\(\), handleExtractLocalMission\(\), handleRebuildLoadOrder\(\)
 
-### Community 10 - "Main Dayz Mod Installer"
+### Community 9 - "Main Dayz Mod Installer"
 Cohesion (entity basis within full-graph community): 0.43
 Nodes (7): DayzModInstaller, .importLocalWorkshop\(\), .installMod\(\), .installMods\(\), .selectWorkshopFolder\(\), .uninstallMod\(\), exists\(\)
 
-### Community 11 - "Renderer Dayz Options Tab"
-Cohesion (entity basis within full-graph community): 0.4
-Nodes (5): CustomNumberInput\(\), CustomSelect\(\), handleClickOutside\(\), DayzOptionsTab\(\), useDayzOptions\(\)
-
-### Community 12 - "Main Dayz Process Manager"
+### Community 10 - "Main Dayz Process Manager"
 Cohesion (entity basis within full-graph community): 0.48
 Nodes (7): DayzProcessManager, .constructor\(\), .sendCommand\(\), .sendLog\(\), .sendPlayerUpdate\(\), .start\(\), .stop\(\)
 
-### Community 13 - "Renderer Use Dayz Mods"
+### Community 11 - "Main Minecraft Downloader"
+Cohesion (entity basis within full-graph community): 0.29
+Nodes (7): MinecraftDownloader, .getFabricVersions\(\), .getForgeVersions\(\), .getLoaderVersions\(\), .getNeoForgeVersions\(\), .getPaperVersions\(\), .getVanillaVersions\(\)
+
+### Community 12 - "Renderer Use Dayz Mods"
 Cohesion (entity basis within full-graph community): 0.43
 Nodes (7): useDayzMods\(\), handleBrowseWorkshop\(\), handleImportWorkshop\(\), handleInstall\(\), handleUninstall\(\), loadInstalledMods\(\), stripBBCode\(\)
 
-### Community 14 - "Renderer Backups Tab"
+### Community 13 - "Renderer Backups Tab"
 Cohesion (entity basis within full-graph community): 0.47
 Nodes (6): BackupsTab\(\), fetchBackups\(\), formatBytes\(\), handleCreate\(\), handleDelete\(\), handleRestore\(\)
 
-### Community 15 - "Renderer Use Dayz Economy"
-Cohesion (entity basis within full-graph community): 0.5
-Nodes (4): useDayzEconomy\(\), handleMultiplierChange\(\), handleSave\(\), loadEconomy\(\)
-
-### Community 16 - "Renderer Use Dayz Mod Store"
+### Community 14 - "Renderer Use Dayz Mod Store"
 Cohesion (entity basis within full-graph community): 0
 Nodes (3): DayzModsTabProps, DayzModStore, PendingDownload
 
-### Community 17 - "Main Frp Adapter"
+### Community 15 - "Main Frp Adapter"
 Cohesion (entity basis within full-graph community): 0.6
 Nodes (5): FrpAdapter, .constructor\(\), .sendLog\(\), .start\(\), .stop\(\)
 
-### Community 18 - "Main Playit Adapter"
+### Community 16 - "Main Minecraft Mod Manager"
+Cohesion (entity basis within full-graph community): 0.33
+Nodes (6): MinecraftModManager, .deleteMod\(\), .getCurseforgeFile\(\), .getInstalledMods\(\), .installCurseforgeMod\(\), .installCurseforgeModpack\(\)
+
+### Community 17 - "Main Playit Adapter"
 Cohesion (entity basis within full-graph community): 0.6
 Nodes (5): PlayitAdapter, .constructor\(\), .sendLog\(\), .start\(\), .stop\(\)
 
-### Community 19 - "Renderer Use Minecraft Software"
+### Community 18 - "Renderer Use Minecraft Software"
 Cohesion (entity basis within full-graph community): 0.33
 Nodes (4): SoftwareTabProps, useMinecraftSoftware\(\), fetchLoaderVersions\(\), fetchVersions\(\)
 
-### Community 20 - "Renderer Use Dayz Files"
+### Community 19 - "Renderer Use Dayz Files"
 Cohesion (entity basis within full-graph community): 0.33
 Nodes (6): useDayzFiles\(\), formatSize\(\), handleCreateFolder\(\), handleDelete\(\), handleNavigateUp\(\), handleSaveFile\(\)
+
+### Community 20 - "Renderer Use Dayz Options"
+Cohesion (entity basis within full-graph community): 0.5
+Nodes (5): useDayzOptions\(\), loadConfig\(\), parseConfig\(\), extractNumber\(\), extractString\(\)
 
 ### Community 21 - "Renderer Use Minecraft Mods"
 Cohesion (entity basis within full-graph community): 0.47
@@ -174,284 +174,340 @@ Nodes (4): DayzAdapter, .constructor\(\), .start\(\), .stop\(\)
 Cohesion (entity basis within full-graph community): 0.6
 Nodes (5): DayzConfigManager, .ensureDefaultConfig\(\), .exists\(\), .readConfig\(\), .writeConfig\(\)
 
-### Community 26 - "Renderer Minecraft Hub"
+### Community 26 - "Renderer Dayz Options Tab"
+Cohesion (entity basis within full-graph community): 0.5
+Nodes (4): CustomNumberInput\(\), CustomSelect\(\), handleClickOutside\(\), DayzOptionsTab\(\)
+
+### Community 27 - "Renderer Minecraft Hub"
 Cohesion (entity basis within full-graph community): 0.4
 Nodes (5): MinecraftHub\(\), fetchServerMeta\(\), handleTabChange\(\), handleTunnel\(\), onRedirectToCreateModpack\(\)
 
-### Community 27 - "Renderer Players Tab"
+### Community 28 - "Renderer Players Tab"
 Cohesion (entity basis within full-graph community): 0
 Nodes (2): PlayersTabProps, PlayerStore
 
-### Community 28 - "Renderer Use Create Server Data"
+### Community 29 - "Renderer Use Create Server Data"
 Cohesion (entity basis within full-graph community): 0.5
 Nodes (4): useCreateServerData\(\), fetchLoaderVersions\(\), fetchModpacks\(\), fetchVersions\(\)
 
-### Community 29 - "Main Wake Proxy"
+### Community 30 - "Main Wake Proxy"
 Cohesion (entity basis within full-graph community): 0.5
 Nodes (4): WakeProxy, .constructor\(\), .startListening\(\), .stopListening\(\)
 
-### Community 30 - "Renderer App"
+### Community 31 - "Renderer App"
 Cohesion (entity basis within full-graph community): 0.5
 Nodes (4): App\(\), checkCache\(\), HubRouter\(\), ModalsContainer\(\)
 
-### Community 31 - "Renderer Use Log Store"
+### Community 32 - "Renderer Use Log Store"
 Cohesion (entity basis within full-graph community): 0
 Nodes (2): LogMessage, LogStore
 
-### Community 32 - "Main Dayz Economy Manager"
+### Community 33 - "Main Dayz Economy Manager"
 Cohesion (entity basis within full-graph community): 0.5
 Nodes (4): DayzEconomyManager, .getEconomy\(\), .updateEconomy\(\), .wipeLoot\(\)
 
-### Community 33 - "Main Dayz Log Parser"
+### Community 34 - "Main Dayz Log Parser"
 Cohesion (entity basis within full-graph community): 0.67
 Nodes (3): DayzLogParser, .cleanup\(\), .constructor\(\)
 
-### Community 34 - "Main Dayz Mod Graph"
+### Community 35 - "Main Dayz Mod Graph"
 Cohesion (entity basis within full-graph community): 1
 Nodes (2): DayzModGraph, .resolveMods\(\)
 
-### Community 35 - "Main Steam Web API"
+### Community 36 - "Main Steam Web API"
 Cohesion (entity basis within full-graph community): 1
 Nodes (2): SteamWebAPI, .getModDependencies\(\)
 
-### Community 36 - "Renderer Files Tab"
+### Community 37 - "Renderer Files Tab"
 Cohesion (entity basis within full-graph community): 0
 Nodes (3): FileInfo, FilesTabProps, formatSize\(\)
 
-### Community 37 - "Main Java Manager"
+### Community 38 - "Main Java Manager"
 Cohesion (entity basis within full-graph community): 0.83
 Nodes (4): JavaManager, .downloadAndExtractJava\(\), .findJavaExecutable\(\), .getJavaPath\(\)
 
-### Community 38 - "Main Minecraft Config Manager"
+### Community 39 - "Main Minecraft Config Manager"
 Cohesion (entity basis within full-graph community): 1
 Nodes (2): MinecraftConfigManager, .init\(\)
 
-### Community 39 - "Main Minecraft Process Manager"
+### Community 40 - "Main Minecraft Process Manager"
 Cohesion (entity basis within full-graph community): 0.5
 Nodes (4): MinecraftProcessManager, .constructor\(\), .getActualPid\(\), .stop\(\)
 
-### Community 40 - "Main Radmin Vpn Adapter"
+### Community 41 - "Main Radmin Vpn Adapter"
 Cohesion (entity basis within full-graph community): 0.67
 Nodes (3): RadminVpnAdapter, .constructor\(\), .getIp\(\)
 
-### Community 41 - "Main Steam Auth"
+### Community 42 - "Main Steam Auth"
 Cohesion (entity basis within full-graph community): 0.67
 Nodes (3): SteamAuth, .getLoginArgs\(\), .isSteamGuardPrompt\(\)
 
-### Community 42 - "Main Steam Cmd Setup"
+### Community 43 - "Main Steam Cmd Setup"
 Cohesion (entity basis within full-graph community): 0.67
 Nodes (4): .ensureInstalled\(\), .getExePath\(\), .getSteamCMDDir\(\), .sendLog\(\)
 
-### Community 43 - "Renderer Use Dayz Options"
+### Community 44 - "Renderer Use Dayz Economy"
 Cohesion (entity basis within full-graph community): 0.5
-Nodes (4): loadConfig\(\), parseConfig\(\), extractNumber\(\), extractString\(\)
+Nodes (4): useDayzEconomy\(\), handleMultiplierChange\(\), handleSave\(\), loadEconomy\(\)
 
-### Community 44 - "Renderer Use Dayz Workshop — Handle"
+### Community 45 - "Renderer Use Dayz Workshop — Handle"
 Cohesion (entity basis within full-graph community): 0.5
 Nodes (4): handleToggleMap\(\), handleUninstall\(\), handleUninstallAll\(\), loadInstalledMods\(\)
 
-### Community 45 - "Main Cache Manager — TypeScript"
+### Community 46 - "Main Cache Manager — TypeScript"
 Cohesion (entity basis within full-graph community): n/a
 Nodes (0): 
 
-### Community 46 - "Main Dayz Log Parser — Log"
-Cohesion (entity basis within full-graph community): 0.67
-Nodes (3): .parseLogLine\(\), .readNewLogs\(\), .tailLogFile\(\)
-
-### Community 47 - "Main Dayz Log Parser — File"
-Cohesion (entity basis within full-graph community): 0.67
-Nodes (3): .pollForLogFile\(\), checkFile\(\), .setupLogWatcher\(\)
-
-### Community 48 - "Main Dayz Mod Status Manager"
-Cohesion (entity basis within full-graph community): 0.67
-Nodes (3): DayzModStatusManager, .rebuildModDependencies\(\), .toggleModStatus\(\)
-
-### Community 49 - "Main Dayz Mod Status Manager — Exists"
-Cohesion (entity basis within full-graph community): 0.67
-Nodes (3): .getInstalledMods\(\), .toggleMapMod\(\), exists\(\)
-
-### Community 50 - "Main Icon"
-Cohesion (entity basis within full-graph community): 1
-Nodes (1): createWindow\(\)
-
-### Community 51 - "Renderer List View Icon"
-Cohesion (entity basis within full-graph community): 0
-Nodes (2): ListViewIcon\(\), ListViewIconProps
-
-### Community 52 - "Main Minecraft Process Manager — Bat"
-Cohesion (entity basis within full-graph community): 0.67
-Nodes (3): .parseRunBat\(\), .sendPlayerUpdate\(\), .start\(\)
-
-### Community 53 - "Main Minecraft Process Manager — Send"
-Cohesion (entity basis within full-graph community): 0.67
-Nodes (3): .sendCommand\(\), .sendLog\(\), .updatePlayerStats\(\)
-
-### Community 54 - "Renderer Motion Faqs Accordion"
-Cohesion (entity basis within full-graph community): 0
-Nodes (2): MotionAccordionItem, MotionAccordionProps
-
-### Community 55 - "Renderer Motion Faqs Accordion — Accordion"
-Cohesion (entity basis within full-graph community): 0.67
-Nodes (3): AccordionItem\(\), MotionAccordion\(\), toggle\(\)
-
-### Community 56 - "Renderer Options Tab"
-Cohesion (entity basis within full-graph community): 1
-Nodes (1): OptionsTabProps
-
-### Community 57 - "Main Steam Cache"
-Cohesion (entity basis within full-graph community): 0.67
-Nodes (3): .deleteCache\(\), .getCacheDir\(\), .isCached\(\)
-
-### Community 58 - "Main System Ipc"
-Cohesion (entity basis within full-graph community): 0
-Nodes (2): exists\(\), registerSystemIpc\(\)
-
-### Community 59 - "Renderer Use Dayz Options — Replace"
-Cohesion (entity basis within full-graph community): 0.67
-Nodes (3): handleSave\(\), replaceNumber\(\), replaceString\(\)
-
-### Community 60 - "Renderer Use Dayz Workshop — Handle \(2\)"
-Cohesion (entity basis within full-graph community): 0.67
-Nodes (3): handleInstallDependencies\(\), handleToggleModStatus\(\), saveCredentials\(\)
-
-### Community 61 - "Renderer Use Ipc Listeners"
-Cohesion (entity basis within full-graph community): 1
-Nodes (2): useIpcListeners\(\), fetchServers\(\)
-
-### Community 62 - "Renderer Use Minecraft Config"
-Cohesion (entity basis within full-graph community): 0.67
-Nodes (3): useMinecraftConfig\(\), handleSaveConfig\(\), loadConfig\(\)
-
-### Community 63 - "Renderer Use Stats Store"
-Cohesion (entity basis within full-graph community): 0
-Nodes (2): StatPoint, StatsStore
-
-### Community 64 - "Renderer Dashboard Hub"
+### Community 47 - "Renderer Dashboard Hub"
 Cohesion (entity basis within full-graph community): 1
 Nodes (2): DashboardHub\(\), DayzModStatus\(\)
 
-### Community 65 - "Main Dayz Config Manager — Dayz"
-Cohesion (entity basis within full-graph community): n/a
-Nodes (0): 
+### Community 48 - "Main Dayz Log Parser — Log"
+Cohesion (entity basis within full-graph community): 0.67
+Nodes (3): .parseLogLine\(\), .readNewLogs\(\), .tailLogFile\(\)
 
-### Community 66 - "Main Dayz Mission Manager"
-Cohesion (entity basis within full-graph community): 1
-Nodes (2): .extractLocalMission\(\), exists\(\)
+### Community 49 - "Main Dayz Log Parser — File"
+Cohesion (entity basis within full-graph community): 0.67
+Nodes (3): .pollForLogFile\(\), checkFile\(\), .setupLogWatcher\(\)
 
-### Community 67 - "Main Dayz Mission Manager — Dayz"
-Cohesion (entity basis within full-graph community): 1
-Nodes (2): .fetchDayzMission\(\), findFolder\(\)
+### Community 50 - "Main Dayz Mod Status Manager"
+Cohesion (entity basis within full-graph community): 0.67
+Nodes (3): DayzModStatusManager, .rebuildModDependencies\(\), .toggleModStatus\(\)
 
-### Community 68 - "Preload Index D"
-Cohesion (entity basis within full-graph community): 1
-Nodes (1): Window
+### Community 51 - "Main Dayz Mod Status Manager — Exists"
+Cohesion (entity basis within full-graph community): 0.67
+Nodes (3): .getInstalledMods\(\), .toggleMapMod\(\), exists\(\)
 
-### Community 69 - "Main Minecraft Downloader — Download"
-Cohesion (entity basis within full-graph community): 1
-Nodes (2): exists\(\), .downloadServerJar\(\)
+### Community 52 - "Renderer List View Icon"
+Cohesion (entity basis within full-graph community): 0
+Nodes (2): ListViewIcon\(\), ListViewIconProps
 
-### Community 70 - "Main Minecraft Ipc"
+### Community 53 - "Main Minecraft Ipc"
 Cohesion (entity basis within full-graph community): 1
 Nodes (1): registerMinecraftIpc\(\)
 
-### Community 71 - "Main Radmin Vpn Adapter — Install"
+### Community 54 - "Main Minecraft Process Manager — Bat"
+Cohesion (entity basis within full-graph community): 0.67
+Nodes (3): .parseRunBat\(\), .sendPlayerUpdate\(\), .start\(\)
+
+### Community 55 - "Main Minecraft Process Manager — Send"
+Cohesion (entity basis within full-graph community): 0.67
+Nodes (3): .sendCommand\(\), .sendLog\(\), .updatePlayerStats\(\)
+
+### Community 56 - "Renderer Mods Tab"
+Cohesion (entity basis within full-graph community): 1
+Nodes (1): ModsTabProps
+
+### Community 57 - "Renderer Motion Faqs Accordion"
+Cohesion (entity basis within full-graph community): 0
+Nodes (2): MotionAccordionItem, MotionAccordionProps
+
+### Community 58 - "Renderer Motion Faqs Accordion — Accordion"
+Cohesion (entity basis within full-graph community): 0.67
+Nodes (3): AccordionItem\(\), MotionAccordion\(\), toggle\(\)
+
+### Community 59 - "Renderer Options Tab"
+Cohesion (entity basis within full-graph community): 1
+Nodes (1): OptionsTabProps
+
+### Community 60 - "Main Steam Cache"
+Cohesion (entity basis within full-graph community): 0.67
+Nodes (3): .deleteCache\(\), .getCacheDir\(\), .isCached\(\)
+
+### Community 61 - "Main System Ipc"
+Cohesion (entity basis within full-graph community): 0
+Nodes (2): exists\(\), registerSystemIpc\(\)
+
+### Community 62 - "Renderer Use Dayz Options — Replace"
+Cohesion (entity basis within full-graph community): 0.67
+Nodes (3): handleSave\(\), replaceNumber\(\), replaceString\(\)
+
+### Community 63 - "Renderer Use Dayz Workshop — Handle \(2\)"
+Cohesion (entity basis within full-graph community): 0.67
+Nodes (3): handleInstallDependencies\(\), handleToggleModStatus\(\), saveCredentials\(\)
+
+### Community 64 - "Renderer Use Ipc Listeners"
+Cohesion (entity basis within full-graph community): 1
+Nodes (2): useIpcListeners\(\), fetchServers\(\)
+
+### Community 65 - "Renderer Use Minecraft Config"
+Cohesion (entity basis within full-graph community): 0.67
+Nodes (3): useMinecraftConfig\(\), handleSaveConfig\(\), loadConfig\(\)
+
+### Community 66 - "Renderer Use Server Store"
+Cohesion (entity basis within full-graph community): 0
+Nodes (2): Server, ServerStore
+
+### Community 67 - "Renderer Use Stats Store"
+Cohesion (entity basis within full-graph community): 0
+Nodes (2): StatPoint, StatsStore
+
+### Community 68 - "Renderer Animated Background"
+Cohesion (entity basis within full-graph community): n/a
+Nodes (0): 
+
+### Community 69 - "Renderer Backups Tab — Backups"
+Cohesion (entity basis within full-graph community): 1
+Nodes (1): BackupsTabProps
+
+### Community 70 - "Renderer Console Tab"
+Cohesion (entity basis within full-graph community): 1
+Nodes (1): ConsoleTabProps
+
+### Community 71 - "Main Dayz Config Manager — Dayz"
+Cohesion (entity basis within full-graph community): n/a
+Nodes (0): 
+
+### Community 72 - "Renderer Dayz Economy Tab"
+Cohesion (entity basis within full-graph community): n/a
+Nodes (0): 
+
+### Community 73 - "Renderer Dayz Economy Tab — Dayz"
+Cohesion (entity basis within full-graph community): 1
+Nodes (2): DayzEconomyTab\(\), renderSlider\(\)
+
+### Community 74 - "Main Dayz Mission Manager"
+Cohesion (entity basis within full-graph community): 1
+Nodes (2): .extractLocalMission\(\), exists\(\)
+
+### Community 75 - "Main Dayz Mission Manager — Dayz"
+Cohesion (entity basis within full-graph community): 1
+Nodes (2): .fetchDayzMission\(\), findFolder\(\)
+
+### Community 76 - "Preload Index D"
+Cohesion (entity basis within full-graph community): 1
+Nodes (1): Window
+
+### Community 77 - "Main Minecraft Downloader — Download"
+Cohesion (entity basis within full-graph community): 1
+Nodes (2): exists\(\), .downloadServerJar\(\)
+
+### Community 78 - "Main Minecraft Mod Manager — Curseforge"
+Cohesion (entity basis within full-graph community): 1
+Nodes (2): .getCurseforgeMod\(\), .getModpackDetails\(\)
+
+### Community 79 - "Main Minecraft Mod Manager — Search"
+Cohesion (entity basis within full-graph community): 1
+Nodes (2): .searchCurseforgeMods\(\), .searchModpacks\(\)
+
+### Community 80 - "Renderer Overview Tab"
+Cohesion (entity basis within full-graph community): 1
+Nodes (1): OverviewTabProps
+
+### Community 81 - "Main Radmin Vpn Adapter — Install"
 Cohesion (entity basis within full-graph community): 1
 Nodes (2): .install\(\), .sendLog\(\)
 
-### Community 72 - "Main Radmin Vpn Adapter — Installed"
+### Community 82 - "Main Radmin Vpn Adapter — Installed"
 Cohesion (entity basis within full-graph community): 1
 Nodes (2): .isInstalled\(\), .open\(\)
 
-### Community 73 - "Refactor Minecraft"
+### Community 83 - "Refactor Minecraft"
 Cohesion (entity basis within full-graph community): 1
 Nodes (1): extract\(\)
 
-### Community 74 - "Main Steam Cache — Cache"
+### Community 84 - "Main Steam Cache — Cache"
 Cohesion (entity basis within full-graph community): 1
 Nodes (2): .copyFromCache\(\), .sendLog\(\)
 
-### Community 75 - "Main Steam Downloader"
+### Community 85 - "Main Steam Downloader"
 Cohesion (entity basis within full-graph community): 1
 Nodes (2): .installApp\(\), .updateCache\(\)
 
-### Community 76 - "Main Steam Web API — Workshop"
+### Community 86 - "Main Steam Web API — Workshop"
 Cohesion (entity basis within full-graph community): 1
 Nodes (2): .getWorkshopItemDetails\(\), .searchWorkshop\(\)
 
-### Community 77 - "Main Steam Workshop Downloader — Download"
+### Community 87 - "Main Steam Workshop Downloader — Download"
 Cohesion (entity basis within full-graph community): 1
 Nodes (2): .downloadWorkshopItem\(\), .downloadWorkshopItems\(\)
 
-### Community 78 - "Renderer Use Dayz Files — Dayz"
+### Community 88 - "Renderer Use Dayz Files — Dayz"
 Cohesion (entity basis within full-graph community): 1
 Nodes (1): FileEntry
 
-### Community 79 - "Renderer Use Dayz Files — Handle"
+### Community 89 - "Renderer Use Dayz Files — Handle"
 Cohesion (entity basis within full-graph community): 1
 Nodes (2): handleFileClick\(\), handleNavigate\(\)
 
-### Community 80 - "Renderer Use Dayz Mods — Handle"
+### Community 90 - "Renderer Use Dayz Mods — Handle"
 Cohesion (entity basis within full-graph community): 1
 Nodes (2): handleCategoryChange\(\), handleSearch\(\)
 
-### Community 81 - "Renderer Versions"
+### Community 91 - "Renderer Versions"
 Cohesion (entity basis within full-graph community): 1
 Nodes (1): Versions\(\)
 
-### Community 82 - "Electron Vite Config TypeScript"
+### Community 92 - "Electron Vite Config TypeScript"
 Cohesion (entity basis within full-graph community): n/a
 Nodes (0): 
 
-### Community 83 - "Env D TypeScript"
+### Community 93 - "Env D TypeScript"
 Cohesion (entity basis within full-graph community): n/a
 Nodes (0): 
 
-### Community 84 - "Fix Steam Js"
+### Community 94 - "Fix Steam Js"
 Cohesion (entity basis within full-graph community): n/a
 Nodes (0): 
 
-### Community 85 - "Main TSX"
+### Community 95 - "Icon Png"
 Cohesion (entity basis within full-graph community): n/a
 Nodes (0): 
 
-### Community 86 - "Minecraft SVG"
+### Community 96 - "Create Window"
+Cohesion (entity basis within full-graph community): 1
+Nodes (1): createWindow\(\)
+
+### Community 97 - "Main TSX"
 Cohesion (entity basis within full-graph community): n/a
 Nodes (0): 
 
-### Community 87 - "Postcss Config Js"
+### Community 98 - "Minecraft SVG"
 Cohesion (entity basis within full-graph community): n/a
 Nodes (0): 
 
-### Community 88 - "Refactor Js"
+### Community 99 - "Postcss Config Js"
 Cohesion (entity basis within full-graph community): n/a
 Nodes (0): 
 
-### Community 89 - "Refactor Minecraft Ipc Js"
+### Community 100 - "Refactor Js"
 Cohesion (entity basis within full-graph community): n/a
 Nodes (0): 
 
-### Community 90 - "Refactor Serveripc Js"
+### Community 101 - "Refactor Minecraft Ipc Js"
 Cohesion (entity basis within full-graph community): n/a
 Nodes (0): 
 
-### Community 91 - "Resolve Js"
+### Community 102 - "Refactor Serveripc Js"
 Cohesion (entity basis within full-graph community): n/a
 Nodes (0): 
 
-### Community 92 - "Tailwind Config Js"
+### Community 103 - "Resolve Js"
 Cohesion (entity basis within full-graph community): n/a
 Nodes (0): 
 
-### Community 93 - "Wavy Lines SVG"
+### Community 104 - "Tailwind Config Js"
+Cohesion (entity basis within full-graph community): n/a
+Nodes (0): 
+
+### Community 105 - "Wavy Lines SVG"
 Cohesion (entity basis within full-graph community): n/a
 Nodes (0): 
 
 ## Knowledge Gaps
-- **164 weakly connected node(s):** `calculateSize\(\)`, `.constructor\(\)`, `.constructor\(\)`, `.constructor\(\)`, `.getIp\(\)` (+159 more)
+- **167 weakly connected node(s):** `calculateSize\(\)`, `.constructor\(\)`, `.constructor\(\)`, `.constructor\(\)`, `.getIp\(\)` (+162 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **Thin community `Renderer Dashboard Hub`** (2 nodes): `DashboardHub\(\)`, `DayzModStatus\(\)`
+- **Thin community `Renderer Animated Background`** (2 nodes): `AnimatedBackground.tsx`, `MinecraftHub.tsx`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Renderer Backups Tab — Backups`** (2 nodes): `BackupsTab.tsx`, `BackupsTabProps`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Renderer Console Tab`** (2 nodes): `ConsoleTab.tsx`, `ConsoleTabProps`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Main Dayz Config Manager — Dayz`** (2 nodes): `DayzConfigManager.ts`, `DayzEconomyManager.ts`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Renderer Dayz Economy Tab`** (2 nodes): `DayzEconomyTab.tsx`, `useDayzEconomy.ts`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Renderer Dayz Economy Tab — Dayz`** (2 nodes): `DayzEconomyTab\(\)`, `renderSlider\(\)`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Main Dayz Mission Manager`** (2 nodes): `.extractLocalMission\(\)`, `exists\(\)`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
@@ -461,7 +517,11 @@ Nodes (0):
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Main Minecraft Downloader — Download`** (2 nodes): `exists\(\)`, `.downloadServerJar\(\)`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Main Minecraft Ipc`** (2 nodes): `MinecraftIpc.ts`, `registerMinecraftIpc\(\)`
+- **Thin community `Main Minecraft Mod Manager — Curseforge`** (2 nodes): `.getCurseforgeMod\(\)`, `.getModpackDetails\(\)`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Main Minecraft Mod Manager — Search`** (2 nodes): `.searchCurseforgeMods\(\)`, `.searchModpacks\(\)`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Renderer Overview Tab`** (2 nodes): `OverviewTab.tsx`, `OverviewTabProps`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Main Radmin Vpn Adapter — Install`** (2 nodes): `.install\(\)`, `.sendLog\(\)`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
@@ -491,6 +551,10 @@ Nodes (0):
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Fix Steam Js`** (1 nodes): `fix\_steam.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Icon Png`** (1 nodes): `icon.png`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Create Window`** (1 nodes): `createWindow\(\)`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Main TSX`** (1 nodes): `main.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Minecraft SVG`** (1 nodes): `minecraft.svg`
@@ -514,12 +578,12 @@ Nodes (0):
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does \`SteamCMDManager\` connect \`Main Steam Cmd Manager\` to \`Main Steam Workshop Downloader\`?**
-  _High betweenness centrality \(2353.000\) - this node is a cross-community bridge._
+  _High betweenness centrality \(2444.000\) - this node is a cross-community bridge._
 - **Why does \`useDayzWorkshop\(\)\` connect \`Renderer Use Dayz Workshop\` to \`Renderer Use Dayz Workshop — Handle\`, \`Renderer Use Dayz Workshop — Handle \(2\)\`, \`Renderer Dayz Hub Context\`?**
   _High betweenness centrality \(1992.250\) - this node is a cross-community bridge._
-- **Why does \`MinecraftProcessManager\` connect \`Main Minecraft Process Manager\` to \`Main Minecraft Config Manager\`, \`Main Minecraft Process Manager — Send\`, \`Main Minecraft Process Manager — Bat\`, \`Main Wake Proxy\`, \`Main Db\`?**
-  _High betweenness centrality \(1639.000\) - this node is a cross-community bridge._
+- **Why does \`MinecraftModManager\` connect \`Main Minecraft Mod Manager\` to \`Main Minecraft Ipc\`, \`Main Minecraft Mod Manager — Search\`, \`Main Minecraft Mod Manager — Curseforge\`?**
+  _High betweenness centrality \(1708.000\) - this node is a cross-community bridge._
 - **What connects \`calculateSize\(\)\`, \`.constructor\(\)\`, \`.constructor\(\)\` to the rest of the system?**
-  _164 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _167 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should \`Main Steam Cmd Manager\` be split into smaller, more focused modules?**
   _Cohesion score 0.14 across 14 entity nodes - this community may mix unrelated responsibilities._
